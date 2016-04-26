@@ -1,0 +1,25 @@
+{
+  "name": "web-api-evaluation",
+  "version": "1.0.0",
+  "description": "various web api evaluations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meaku/web-api-evaluation.git"
+  },
+  "author": "Michael Jaser <michael.jaser@peerigon.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/meaku/web-api-evaluation/issues"
+  },
+  "homepage": "https://github.com/meaku/web-api-evaluation#readme",
+  "dependencies": {
+    "express": "^4.13.4",
+    "spdy": "^3.3.2",
+    "ws": "^1.1.0",
+    "yargs": "^4.6.0"
+  }
+}
