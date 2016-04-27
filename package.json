@@ -17,8 +17,14 @@
   },
   "homepage": "https://github.com/meaku/web-api-evaluation#readme",
   "dependencies": {
+    "cli-table": "^0.3.1",
     "express": "^4.13.4",
+    "glob-promise": "^1.0.6",
+    "hoxy": "^3.2.0",
+    "simple-statistics": "^2.0.0-beta1",
     "spdy": "^3.3.2",
+    "wd": "^0.4.0",
+    "when": "^3.7.7",
     "ws": "^1.1.0",
     "yargs": "^4.6.0"
   }
