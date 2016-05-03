@@ -1,7 +1,7 @@
 "use strict";
 
 const fs = require("fs");
-const resources = require("./resources");
+const resources = require("./lib/resources");
 
 const express = require("express");
 var app = express();

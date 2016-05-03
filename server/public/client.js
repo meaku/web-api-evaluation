@@ -92,6 +92,21 @@ function bench(testSet) {
         .catch((err) => console.error(err, err.stack));
 }
 
+window.sse = function() {
+    var es = new EventSource("/sse");
+
+    es.onopen = function() {
+        console.log("sse connection to /see established");
+    };
+
+    es.onerror = function(err) {
+        console.error("An error occured: " + err.message);
+    };
+
+    es.onmessage = function (event) {
+        console.log(event.data);
+    };
+};
 
 window.start = function (type) {
 

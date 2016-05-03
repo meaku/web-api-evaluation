@@ -4,8 +4,11 @@ const fs = require("fs");
 const https = require("https");
 const spdy = require("spdy");
 const argv = require("yargs").argv;
-const WebSocketServer = require("ws").Server;
-const resources = require("./resources");
+
+const websockets = require("./lib/websocket");
+const sse = require("./lib/sse");
+
+const resources = require("./lib/resources");
 
 const api = require("./app");
 
@@ -49,49 +52,6 @@ server.listen(parseInt(port), () => {
 let connections = 0;
 server.on("connection", () => console.log("connections: " + ++connections));
 
-const wss = new WebSocketServer({ server: server });
-
-wss.on("connection", function connection(ws) {
-
-    function send(data) {
-        console.log("send", data);
-        ws.send(JSON.stringify(data));
-    }
-
-    ws.on("message", function incoming(message) {
-        message = JSON.parse(message);
-        console.log('received', message);
-
-        //const type = message.type;
-        const requestId = message.requestId;
-        const url = message.payload.url;
-
-        const parts = url.split("/");
-        const type = parts[0];
-        const id = parts[1];
-
-        if (!resources[type]) {
-            send({ error: "resource not found" });
-            return;
-        }
-
-        const resource = resources[type];
-
-        if (!id) {
-            resource.readCollection()
-                .then(send)
-                .catch((err) => console.error(err));
-
-            return;
-        }
-
-        resource.read(id)
-            .then((payload) => {
-                send({
-                    requestId,
-                    payload
-                })
-            })
-            .catch((err) => console.error(err));
-    });
-});
+//init transports 
+websockets(server, resources);
+sse(server, resources);
