@@ -106,6 +106,12 @@ window.sse = function() {
     es.onmessage = function (event) {
         console.log(event.data);
     };
+
+    //listen for messages with type === "important-news"
+    es.addEventListener("breaking-news", function (event) {
+        console.log("Breaking News: ", event.data);
+    });
+
 };
 
 window.start = function (type) {

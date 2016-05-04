@@ -6,54 +6,48 @@ const WebSocket = require("ws");
 function wsProxy(server) {
     const wss = new WebSocketServer({ server });
 
-    wss.on("connection", function connection(ws) {
-        const req = ws.upgradeReq;
+    wss.on("connection", function connection(wsClient) {
+        const req = wsClient.upgradeReq;
+
         //TODO wss or ws depending on origin
         const wsUrl = "wss://" + req.headers.host + req.url;
 
-        let wsClient = new WebSocket(wsUrl, {
+        let wsTarget = new WebSocket(wsUrl, {
             headers: {
                 "User-Agent": req.headers["user-agent"],
                 "Origin": req.headers.origin
             }
         });
 
-        const wsClientConnected = new Promise((resolve) => {
-            wsClient.on("open", () => {
-                console.log("connected");
-                resolve(wsClient);
-            });
-        });
-
-        ws.on("message", (msg) => {
-            wsClientSend(msg);
-        });
-
-        ws.on("close", () => {
-           wsClient.close();
-        });
-
-        function wsClientSend(msg) {
-            wsClientConnected.then((client) => {
-                console.log("[WS] -> ", msg);
-                client.send(msg);
-            });
-        }
-
-        wsClient.on("error", (err) => console.error(err));
-
-        wsClient.on("open", () => {
-            console.log("connected");
-
-            ws.on("message", (msg) => {
-                wsClient.send(msg);
+        const wsTargetConnection = new Promise((resolve) => {
+            wsTarget.on("open", () => {
+                console.log("connected: " + wsUrl);
+                resolve(wsTarget);
             });
         });
 
         wsClient.on("message", (msg) => {
+            pipeToTarget(msg);
+        });
+
+        wsClient.on("close", () => {
+            console.log("Closing WS Connection");
+            wsTarget.close();
+        });
+
+        function pipeToTarget(msg) {
+            wsTargetConnection.then((wsClient) => {
+                console.log("[WS] -> ", msg);
+                wsClient.send(msg);
+            });
+        }
+
+        wsTarget.on("error", (err) => console.error(err));
+
+        wsTarget.on("message", (msg) => {
             console.log("[WS] <- ", msg);
-            if(ws.connected) {
-                ws.send(msg);
+            if(wsClient.connected) {
+                wsClient.send(msg);
             }
         });
     });

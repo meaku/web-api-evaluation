@@ -1,82 +1,100 @@
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
+
 var webdriver = require("selenium-webdriver"),
-    chrome = require("selenium-webdriver/chrome"),
-    //firefox = require('selenium-webdriver/firefox'),
-    By = webdriver.By,
-    until = webdriver.until;
+    chrome = require("selenium-webdriver/chrome");
 
 const initProxy = require("../proxy/proxy");
 
-//const topWebsites = require("../tools/top100Wikipedia.json").map((website) => website.domain);
+const websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
 
+/*
 const websites = [
+    "nytimes.com",
     "twitter.com",
     "github.com",
-    "facebook.com"
-    //"youtube.com",
-    //"instagram.com",
-    //"web.whatsapp.com",
-    //"beta.peerigon.com/?tkn=nxD9vXEDdy49BZJ0CpJwXePFVL8Cq2"
+    "facebook.com",
+    "youtube.com",
+    "instagram.com",
+    "web.whatsapp.com",
+    //"play.spotify.com"
 ];
+*/
 
-const proxy = initProxy({
-    domain: "nytimes.com",
-    port: 8080
-});
+//const websites = ["heise.de", "play.spotify.com"];
+//console.log(topWebsites);
 
-    proxy.start()
-    .then(() => {
 
-        var driver = new webdriver.Builder()
-            .forBrowser("chrome")
-            .setChromeOptions(
-                new chrome.Options().setProxy({
-                    proxyType: "manual",
-                    httpProxy: "localhost:8080",
-                    sslProxy: "localhost:8080"
-                })
-            )
-            .build();
-
-        return load(driver, "nytimes.com");
-    })
-    .then(() => {
-       return proxy.shutdown();
-    })
-    .then((res) => {
-        console.log("DONE!");
-        console.log(res.findings);
-        console.log(res.requests);
-    })
-    .catch((err) => {
-      console.error(err.message, err.stack);
+function runTest(domain) {
+    const proxy = initProxy({
+        domain,
+        port: 8080
     });
 
+    return proxy.start()
+        .then(() => {
+
+            var driver = new webdriver.Builder()
+                .forBrowser("chrome")
+                .setChromeOptions(
+                    new chrome.Options().setProxy({
+                        proxyType: "manual",
+                        httpProxy: "localhost:8080",
+                        sslProxy: "localhost:8080"
+                    })
+                )
+                .build();
+
+            return load(driver, domain);
+        })
+        .then(() => {
+            return proxy.shutdown();
+        })
+        .then((res) => {
+            console.log(res.findings);
+            return res;
+        })
+        .catch((err) => {
+            console.error(err.message, err.stack);
+        });
+}
 
 function load(driver, url) {
     return new Promise((resolve) => {
         driver.get(`https://${url}`);
         driver.sleep(20000);
-        driver.quit();
+
 
         setTimeout(resolve, 20000);
-    })
+        setTimeout(()=> {
+            driver.quit();
+        }, 30000)
+
+    });
 }
 
-/*
-function run(urls) {
+
+function run(urls, results = {}) {
     if(urls.length === 0) {
-        console.log("done");
-        return;
+        return results;
     }
 
-    const url = urls.pop();
+    const url = urls.shift();
 
-    load(url)
-        .then(() => { run(urls) });
+    return runTest(url)
+        .then((res) => {
+            results[url] = res;
+            return run(urls, results)
+        });
 }
 
-run(websites);
-*/
+run(websites)
+    .then((results) => {
+        fs.writeFileSync(path.join(__dirname, "../data/results_evaluation.json"), JSON.stringify(results, null, 2));
+        console.log("DONE");
+    })
+    .catch((err) => { console.error(err.message, err.stack); });
+
 

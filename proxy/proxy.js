@@ -45,7 +45,6 @@ module.exports = function init(options = {}) {
         console.error(err, err.stack);
     });
 
-
     proxy.intercept({
         phase: "request"
     }, function (req, res, cycle) {
@@ -56,7 +55,6 @@ module.exports = function init(options = {}) {
         phase: "response"
     }, function (req, res, cycle) {
        try{
-
            logRequest(req, res);
 
            if(req.fullUrl().indexOf(options.domain) !== -1) {
@@ -69,7 +67,6 @@ module.exports = function init(options = {}) {
         catch(err) {
             console.error(err.message, err.stack);
         }
-
     });
 
     proxy.intercept({
@@ -80,31 +77,70 @@ module.exports = function init(options = {}) {
         findings.serviceWorker = req.fullUrl;
     });
 
-    proxy._tlsSpoofingServer.addListener("upgrade", function (req, socket, upgradeHead) {
-        console.log("[spoofer] Upgrade", req.url, req.headers);
+    proxy.intercept({
+        phase: "response",
+        contentType: "text/event-stream"
+    }, function (req) {
+        console.log("event stream!", req.fullUrl());
+        findings.sse = req.fullUrl;
+    });
+
+    proxy.intercept({
+        phase: "request",
+        fullUrl: "*/sw.js"
+    }, function (req) {
+        console.log("service worker!", req.fullUrl());
+        findings.serviceWorker = req.fullUrl;
+    });
+
+    proxy._tlsSpoofingServer.once("upgrade", function (req, socket, upgradeHead) {
+        console.log("[spoofer] Upgrade", req.url);
         findings.websockets = req.headers;
     });
 
     wsProxy(proxy._tlsSpoofingServer);
 
-    setInterval(() => {
-        console.log(findings);
-    }, 5000);
+    proxy._sockets = [];
+
+    proxy._server.on("connection", (socket) => {
+        proxy._sockets.push(socket);
+    });
+
+    proxy._tlsSpoofingServer.on("connection", (socket) => {
+        proxy._sockets.push(socket);
+    });
 
     proxy.shutdown = function() {
-        return new Promise((resolve, reject) => {
-            proxy.close(function(err) { // optional callback
-                if (err) {
-                    reject(err);
-                    return;
-                }
+        function closeConnection(server, serverName) {
+            return new Promise((resolve, reject) => {
+                server.close((err) => {
+                    if(err) {
+                        return reject(err);
+                    }
 
-                resolve({
+                    console.log(serverName + " closed ");
+                    resolve();
+                })
+
+            });
+        }
+
+        proxy._sockets.forEach((socket) => {
+            socket.destroy();
+        });
+        
+        return Promise.all([
+            closeConnection(proxy._server, "_server"),
+            closeConnection(proxy._tlsSpoofingServer, "_tlsSpoofingServer")
+        ])
+            .then(() => {
+                proxy._sockets = [];
+
+                return {
                     findings,
                     requests
-                });
+                };
             });
-        });
     };
 
     proxy.start = function() {
@@ -126,7 +162,7 @@ process.on("unhandledRejection", (err) => {
     throw err;
 });
 
-process.on("error", (err) => {
+process.on("uncaughtException", (err) => {
     console.error(err.message, err.stack);
     process.exit(1);
 });
