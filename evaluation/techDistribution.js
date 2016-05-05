@@ -8,30 +8,30 @@ var webdriver = require("selenium-webdriver"),
 
 const initProxy = require("../proxy/proxy");
 
-const websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
+//const websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
 
-/*
+///*
 const websites = [
     "nytimes.com",
     "twitter.com",
+    "soundcloud.com",
     "github.com",
     "facebook.com",
     "youtube.com",
     "instagram.com",
     "web.whatsapp.com",
-    //"play.spotify.com"
+    "play.spotify.com",
+    "stackoverflow.com"
 ];
-*/
-
-//const websites = ["heise.de", "play.spotify.com"];
-//console.log(topWebsites);
-
+//*/
 
 function runTest(domain) {
     const proxy = initProxy({
         domain,
         port: 8080
     });
+
+    let findings = {};
 
     return proxy.start()
         .then(() => {
@@ -49,30 +49,50 @@ function runTest(domain) {
 
             return load(driver, domain);
         })
-        .then(() => {
+        .then((browserFindings) => {
+            findings = browserFindings;
             return proxy.shutdown();
         })
-        .then((res) => {
-            console.log(res.findings);
-            return res;
-        })
-        .catch((err) => {
-            console.error(err.message, err.stack);
+        .then((serverResults) => {
+            findings.features = Object.assign(findings.features, serverResults.features);
+            findings.requests = Object.assign(findings.requests, serverResults.requests);
+            return findings;
         });
 }
 
+function browserUsageDetection() {
+        const callback = arguments[arguments.length - 1];
+
+        const results = {
+            features: {
+                applicationCache: window.applicationCache.status === 1,
+                localStorage: window.localStorage.length,
+                sessionStorage: window.sessionStorage.length,
+                serviceWorker: navigator.serviceWorker.controller !== null,
+            },
+            requests: {
+                client: window.performance.getEntries()
+            },
+            timing: window.performance.timing
+        };
+
+        window.indexedDB.webkitGetDatabaseNames().onsuccess = function(sender) {
+            results.features.indexedDBs = sender.target.result;
+            callback(results);
+        };
+}
+
 function load(driver, url) {
-    return new Promise((resolve) => {
         driver.get(`https://${url}`);
+        driver.manage().timeouts().setScriptTimeout(500);
         driver.sleep(20000);
 
-
-        setTimeout(resolve, 20000);
-        setTimeout(()=> {
-            driver.quit();
-        }, 30000)
-
-    });
+        return driver.executeAsyncScript(browserUsageDetection)
+            .then((res) => {
+                console.log(res);
+                return driver.quit()
+                    .then(() => res);
+            });
 }
 
 
@@ -92,9 +112,16 @@ function run(urls, results = {}) {
 
 run(websites)
     .then((results) => {
-        fs.writeFileSync(path.join(__dirname, "../data/results_evaluation.json"), JSON.stringify(results, null, 2));
+
+        console.log(results);
+
+        fs.writeFileSync(path.join(__dirname, "../results/techDistribution.json"), JSON.stringify(results, null, 2));
         console.log("DONE");
+        process.exit(0);
     })
-    .catch((err) => { console.error(err.message, err.stack); });
+    .catch((err) => {
+        console.error(err.message, err.stack);
+        process.exit(1);
+    });
 
 

@@ -31,7 +31,6 @@ function wsProxy(server) {
         });
 
         wsClient.on("close", () => {
-            console.log("Closing WS Connection");
             wsTarget.close();
         });
 

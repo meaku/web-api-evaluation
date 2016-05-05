@@ -15,7 +15,7 @@ const ca = {
 module.exports = function init(options = {}) {
     const requests = [];
 
-    const findings = {
+    const features = {
         websockets: false,
         serviceWorker: false,
         sse: false,
@@ -26,6 +26,8 @@ module.exports = function init(options = {}) {
     function logRequest(req, res) {
         requests.push({
             url: req.fullUrl(),
+            requestHeaders: req.headers,
+            responseHeaders: res.headers,
             method: req.method,
             statusCode: res.statusCode,
             contentType: res.headers["content-type"],
@@ -34,7 +36,11 @@ module.exports = function init(options = {}) {
             parsedUrl: url.parse(req.fullUrl())
         });
 
-        console.log(`[${req.method}] ${req.fullUrl()}`);
+        const contentType = res.headers["content-type"];
+
+        if(contentType && contentType.indexOf("event-stream") !== -1) {
+            console.log(`[${req.method}] ${res.headers["content-type"]} ${req.fullUrl()}`);
+        }
     }
 
     const proxy = hoxy.createServer({
@@ -58,10 +64,10 @@ module.exports = function init(options = {}) {
            logRequest(req, res);
 
            if(req.fullUrl().indexOf(options.domain) !== -1) {
-               findings.sameDomainRequests++;
+               features.sameDomainRequests++;
            }
            else {
-               findings.externalRequests++;
+               features.externalRequests++;
            }
        }
         catch(err) {
@@ -74,28 +80,22 @@ module.exports = function init(options = {}) {
         fullUrl: "*/serviceworker.js"
     }, function (req) {
         console.log("service worker!", req.fullUrl());
-        findings.serviceWorker = req.fullUrl;
+        features.serviceWorker = req.fullUrl;
     });
 
     proxy.intercept({
         phase: "response",
         contentType: "text/event-stream"
     }, function (req) {
-        console.log("event stream!", req.fullUrl());
-        findings.sse = req.fullUrl;
+        features.sse = req.fullUrl();
     });
 
-    proxy.intercept({
-        phase: "request",
-        fullUrl: "*/sw.js"
-    }, function (req) {
-        console.log("service worker!", req.fullUrl());
-        findings.serviceWorker = req.fullUrl;
-    });
-
-    proxy._tlsSpoofingServer.once("upgrade", function (req, socket, upgradeHead) {
+    proxy._tlsSpoofingServer.once("upgrade", function (req) {
         console.log("[spoofer] Upgrade", req.url);
-        findings.websockets = req.headers;
+        features.websockets = {
+            path: req.url,
+            headers: req.headers
+        };
     });
 
     wsProxy(proxy._tlsSpoofingServer);
@@ -111,20 +111,20 @@ module.exports = function init(options = {}) {
     });
 
     proxy.shutdown = function() {
-        function closeConnection(server, serverName) {
+        function closeConnection(server) {
             return new Promise((resolve, reject) => {
                 server.close((err) => {
                     if(err) {
                         return reject(err);
                     }
 
-                    console.log(serverName + " closed ");
                     resolve();
                 })
 
             });
         }
 
+        //destroy all sockets, so the connection can be closed
         proxy._sockets.forEach((socket) => {
             socket.destroy();
         });
@@ -134,11 +134,14 @@ module.exports = function init(options = {}) {
             closeConnection(proxy._tlsSpoofingServer, "_tlsSpoofingServer")
         ])
             .then(() => {
+                //reset sockets
                 proxy._sockets = [];
 
                 return {
-                    findings,
-                    requests
+                    features,
+                    requests: {
+                        server: requests
+                    }
                 };
             });
     };
