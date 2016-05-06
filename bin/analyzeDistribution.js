@@ -23,6 +23,12 @@ function filterRequests(requests) {
         chars: texChars
     });
 
+    const mergedRequestTable = new Table({
+        head: ["Url", "Method", "Duration", "Size", "Type"],
+        colWidths: [60, 15, 10, 10, 30],
+        chars: texChars
+    });
+
     //set in proxy
     requests.server = requests.server.map((req) => {
         if(!req.contentType) {
@@ -33,7 +39,7 @@ function filterRequests(requests) {
     });
     
     res.clientXhr = requests.client
-        .filter(req => req.initiatorType === "xmlhttprequest")
+        .filter(req => req.initiatorType === "xmlhttprequest" || req.initiatorType === "")
         .map((req) => {
             requestTable.push([req.name, req.duration, "client", req.initiatorType]);
             
@@ -59,16 +65,19 @@ function filterRequests(requests) {
         
         const matchingServerResponse = requests.server.filter(serverRequest => serverRequest.url === req.url)[0] || {};
         
-        return {
+        const res = {
             url: req.url,
-            duration: req.duration,
-            type: "xhr",
-            server: matchingServerResponse
-        }
+            method: matchingServerResponse.method,
+            contentLength: matchingServerResponse.contentLength,
+            contentType: matchingServerResponse.contentType,
+            duration: req.duration
+        };
+        
+        mergedRequestTable.push([res.url, res.method || "",  res.duration || "", res.contentLength || "", res.contentType || ""]);
     });
 
-    console.log(requestTable.toString());
-    console.log(res.matchingRequests);
+    //console.log(requestTable.toString());
+    console.log(mergedRequestTable.toString());
     
     return res;
 }
