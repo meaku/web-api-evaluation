@@ -2,13 +2,69 @@
 
 const fs = require("fs");
 const path = require("path");
+const webdriver = require("selenium-webdriver");
+const chrome = require("selenium-webdriver/chrome");
+const fork = require("child_process").fork;
 
-var webdriver = require("selenium-webdriver"),
-    chrome = require("selenium-webdriver/chrome");
+const results = require("../results/techDistribution.json");
 
-const initProxy = require("../proxy/proxy");
+class Proxy {
+    constructor(domain, port){
+        this.domain = domain;
+        this.port = port;
+    }
+    
+    start() {
+        const self = this;
+        return new Promise((resolve, reject) => {
+            const px = self.px = fork(path.join(__dirname, "./proxy.js"), {
+                env: Object.assign(process.env, {
+                    PROXY_PORT: self.port,
+                    PROXY_DOMAIN: self.domain
+                })
+            });
 
-const websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
+            //px.stdout.pipe(process.stdout);
+            //px.stderr.pipe(process.stderr);
+
+            px.once("message", (msg) => {
+                if(msg.cmd === "ready") {
+                    resolve();
+                }
+            });
+
+            px.on("close", (code) => {
+                reject(new Error("rejected with " + code));
+            });
+        });      
+    }
+
+    shutdown() {
+        const self = this;
+        return new Promise((resolve, reject) => {
+
+            self.px.on("message", (msg) => {
+                if(msg.cmd === "results") {
+                    resolve(msg.results);
+                }
+            });
+
+            self.px.send({
+                cmd: "shutdown"
+            });
+        });
+    }
+}
+
+//const initProxy = require("./proxy");
+
+let websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
+let port = 9000;
+
+const checkedDomains = Object.keys(results);
+websites = websites.filter((domain) => checkedDomains.indexOf(domain) === -1);
+
+console.log("Checking " + websites.length + " websites");
 
 /*
  const websites = [
@@ -26,11 +82,13 @@ const websites = require("../data/top100Wikipedia.json").map((website) => websit
  //*/
 
 function runTest(domain) {
-    const proxy = initProxy({
-        domain,
-        port: 8080
-    });
+    const proxyPort = port++;
 
+    if(proxyPort >= 9010) {
+        port = 9000;
+    }
+    
+    const proxy = new Proxy(domain, proxyPort);
     let findings = {};
 
     return proxy.start()
@@ -41,11 +99,13 @@ function runTest(domain) {
                 .setChromeOptions(
                     new chrome.Options().setProxy({
                         proxyType: "manual",
-                        httpProxy: "localhost:8080",
-                        sslProxy: "localhost:8080"
+                        httpProxy: "localhost:" + proxyPort,
+                        sslProxy: "localhost:" + proxyPort
                     })
                 )
                 .build();
+            
+            driver.manage().timeouts().pageLoadTimeout(140000);
 
             return load(driver, domain);
         })
@@ -69,7 +129,7 @@ function browserUsageDetection() {
                 applicationCache: window.applicationCache.status === 1,
                 localStorage: window.localStorage.length,
                 sessionStorage: window.sessionStorage.length,
-                serviceWorker: navigator.serviceWorker.controller !== null,
+                serviceWorker: navigator.serviceWorker.controller !== null
             },
             requests: {
                 client: window.performance.getEntries()
@@ -92,7 +152,7 @@ function browserUsageDetection() {
 function load(driver, url) {
     driver.get(`https://${url}`);
     driver.manage().timeouts().setScriptTimeout(500);
-    driver.sleep(20000);
+    driver.sleep(15000);
 
     return driver.executeAsyncScript(browserUsageDetection)
         .then((res) => {
@@ -108,6 +168,7 @@ function run(urls, results = {}) {
     }
 
     const url = urls.shift();
+    console.log(`Requesting ${url}`);
 
     return runTest(url)
         .then((res) => {
@@ -117,12 +178,11 @@ function run(urls, results = {}) {
         .catch((err) => {
             console.error("Skipping " + url + " " + err.message);
             return run(urls, results);
-        })
+        });
 }
 
 run(websites)
     .then((results) => {
-
         console.log(results);
 
         fs.writeFileSync(path.join(__dirname, "../results/techDistribution.json"), JSON.stringify(results, null, 2));
@@ -130,8 +190,16 @@ run(websites)
         process.exit(0);
     })
     .catch((err) => {
+        console.log("Error caught");
         console.error(err.message, err.stack);
         process.exit(1);
     });
 
+process.on("unhandledRejection", (err) => {
+    throw err;
+});
 
+process.on("uncaughtException", (err) => {
+    console.error(err.message, err.stack);
+    process.exit(1);
+});

@@ -3,13 +3,14 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const url = require("url");
+const path = require("path");
 const hoxy = require("hoxy");
 const fs = require("fs");
 const wsProxy = require("./wsProxy");
 
 const ca = {
-    key: fs.readFileSync(__dirname + "/ca/root-ca.key.pem"),
-    cert: fs.readFileSync(__dirname + "/ca/root-ca.crt.pem")
+    key: fs.readFileSync(path.resolve(__dirname, "./ca/root-ca.key.pem")),
+    cert: fs.readFileSync(path.resolve(__dirname, "./ca/root-ca.crt.pem"))
 };
 
 module.exports = function init(options = {}) {
@@ -38,7 +39,7 @@ module.exports = function init(options = {}) {
 
         const contentType = res.headers["content-type"];
 
-        if(contentType && contentType.indexOf("event-stream") !== -1) {
+        if (contentType && contentType.indexOf("event-stream") !== -1) {
             console.log(`[${req.method}] ${res.headers["content-type"]} ${req.fullUrl()}`);
         }
     }
@@ -48,7 +49,15 @@ module.exports = function init(options = {}) {
     });
 
     proxy.on("error", (err) => {
-        console.error(err, err.stack);
+        console.error("Proxy Error", err, err.stack);
+    });
+
+    proxy._server.on("error", (err) => {
+        console.error("_server Error", err, err.stack);
+    });
+
+    proxy._tlsSpoofingServer.on("error", (err) => {
+        console.error("_tlsSpoofingServer Error", err, err.stack);
     });
 
     proxy.intercept({
@@ -60,17 +69,10 @@ module.exports = function init(options = {}) {
     proxy.intercept({
         phase: "response"
     }, function (req, res, cycle) {
-       try{
-           logRequest(req, res);
-
-           if(req.fullUrl().indexOf(options.domain) !== -1) {
-               features.sameDomainRequests++;
-           }
-           else {
-               features.externalRequests++;
-           }
-       }
-        catch(err) {
+        try {
+            logRequest(req, res);
+        }
+        catch (err) {
             console.error(err.message, err.stack);
         }
     });
@@ -98,23 +100,25 @@ module.exports = function init(options = {}) {
         };
     });
 
-    wsProxy(proxy._tlsSpoofingServer);
+    //wsProxy(proxy._tlsSpoofingServer);
 
     proxy._sockets = [];
 
-    proxy._server.on("connection", (socket) => {
-        proxy._sockets.push(socket);
-    });
+    /*
+     proxy._server.on("connection", (socket) => {
+     proxy._sockets.push(socket);
+     });
 
-    proxy._tlsSpoofingServer.on("connection", (socket) => {
-        proxy._sockets.push(socket);
-    });
+     proxy._tlsSpoofingServer.on("connection", (socket) => {
+     proxy._sockets.push(socket);
+     });
+     */
 
-    proxy.shutdown = function() {
+    proxy.shutdown = function () {
         function closeConnection(server) {
             return new Promise((resolve, reject) => {
                 server.close((err) => {
-                    if(err) {
+                    if (err) {
                         return reject(err);
                     }
 
@@ -125,14 +129,18 @@ module.exports = function init(options = {}) {
         }
 
         //destroy all sockets, so the connection can be closed
-        proxy._sockets.forEach((socket) => {
-            socket.destroy();
-        });
-        
+        /*
+         proxy._sockets.forEach((socket) => {
+         //socket.destroy();
+         socket.end();
+         socket.unref();
+         });
+         */
+
         return Promise.all([
-            closeConnection(proxy._server, "_server"),
-            closeConnection(proxy._tlsSpoofingServer, "_tlsSpoofingServer")
-        ])
+                closeConnection(proxy._server, "_server"),
+                closeConnection(proxy._tlsSpoofingServer, "_tlsSpoofingServer")
+            ])
             .then(() => {
                 //reset sockets
                 proxy._sockets = [];
@@ -146,29 +154,41 @@ module.exports = function init(options = {}) {
             });
     };
 
-    proxy.start = function() {
+    proxy.getResults = function() {
+        return {
+            features,
+            requests: {
+                server: requests
+            }
+        };
+    };
+    
+    proxy.start = function () {
         return new Promise((resolve, reject) => {
-           proxy.listen(options.port, function(err) {
-               if(err) {
-                   return reject(err);
-               }
-               resolve(proxy);
-           });
+
+            proxy.on("error", reject);
+
+            proxy.listen(options.port, function (err) {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(proxy);
+            });
         });
     };
 
     return proxy;
 };
 
+/*
+ process.on("unhandledRejection", (err) => {
+ throw err;
+ });
 
-process.on("unhandledRejection", (err) => {
-    throw err;
-});
-
-process.on("uncaughtException", (err) => {
-    console.error(err.message, err.stack);
-    process.exit(1);
-});
-
+ process.on("uncaughtException", (err) => {
+ console.error(err.message, err.stack);
+ process.exit(1);
+ });
+ */
 
 

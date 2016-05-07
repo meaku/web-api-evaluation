@@ -1,22 +1,25 @@
 "use strict";
 
 const Table = require("cli-table");
-const results = require("../results/techDistribution.json");
+const results = require("../results/top100_techDistribution.json");
+const top100domains = require("../data/top100Wikipedia.json").map((entry) => entry.domain);
 
-const texChars = { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
-    , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
-    , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
-    , 'right': '\\\\' , 'right-mid': '' , 'middle': '&' };
+const texChars = {
+    'top': '', 'top-mid': '', 'top-left': '', 'top-right': ''
+    , 'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': ''
+    , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
+    , 'right': '\\\\', 'right-mid': '', 'middle': '&'
+};
 
 const table = new Table({
-    head: ["Domain", "WebSockets", "SSE"],
-    colWidths: [30, 15, 10],
+    head: ["Domain", "WebSockets", "SSE", "SW", "ls", "ss", "idb", "appcache"],
+    colWidths: [30, 20, 20, 20, 20, 20, 20, 20],
     chars: texChars
 });
 
 function filterRequests(requests) {
     const res = {};
-    
+
     const requestTable = new Table({
         head: ["Url", "Duration", "Type", "Content-Type"],
         colWidths: [50, 15, 10],
@@ -31,24 +34,24 @@ function filterRequests(requests) {
 
     //set in proxy
     requests.server = requests.server.map((req) => {
-        if(!req.contentType) {
+        if (!req.contentType) {
             req.contentType = "unknown";
         }
-        
+
         return req;
     });
-    
+
     res.clientXhr = requests.client
         .filter(req => req.initiatorType === "xmlhttprequest" || req.initiatorType === "")
         .map((req) => {
             requestTable.push([req.name, req.duration, "client", req.initiatorType]);
-            
+
             return {
                 url: req.name,
                 duration: req.duration
             };
         });
-    
+
     res.serverJson = requests.server
         .filter(req => req.contentType.indexOf("application/json") !== -1)
         .map((req) => {
@@ -62,9 +65,9 @@ function filterRequests(requests) {
 
 
     res.matchingRequests = res.clientXhr.map((req) => {
-        
+
         const matchingServerResponse = requests.server.filter(serverRequest => serverRequest.url === req.url)[0] || {};
-        
+
         const res = {
             url: req.url,
             method: matchingServerResponse.method,
@@ -72,23 +75,51 @@ function filterRequests(requests) {
             contentType: matchingServerResponse.contentType,
             duration: req.duration
         };
-        
-        mergedRequestTable.push([res.url, res.method || "",  res.duration || "", res.contentLength || "", res.contentType || ""]);
+
+        mergedRequestTable.push([res.url, res.method || "", res.duration || "", res.contentLength || "", res.contentType || ""]);
     });
 
     //console.log(requestTable.toString());
     console.log(mergedRequestTable.toString());
-    
+
     return res;
 }
 
-Object.keys(results).forEach((key) => {
-    const result = results[key];
-    
-    table.push([key, result.features.websockets !== false, result.features.sse]);
-    
-    console.log("Domain: ", key);
-    const reqs = filterRequests(result.requests);
-});
+Object.keys(results)
+    .forEach((key) => {
+        const result = results[key];
+
+        table.push([
+                key,
+                result.features.websockets !== false,
+                result.features.sse,
+                result.features.serviceWorker,
+                result.features.localStorage > 0,
+                result.features.sessionStorage > 0,
+                result.features.indexedDBs.length > 0,
+                result.features.applicationCache
+        ]);
+
+        const lastIndex = table.length - 1;
+
+        table[lastIndex] = table[lastIndex].map((elem) => {
+            if (elem === true) {
+                return "\\checkmark";
+            }
+            if (elem === false) {
+                return "";
+            }
+            return elem;
+        });
+
+        console.log("\n", "Domain: ", key);
+        const reqs = filterRequests(result.requests);
+    });
 
 console.log(table.toString());
+
+const checkedDomains = Object.keys(results);
+
+const skippedUrls = top100domains.filter((domain) => checkedDomains.indexOf(domain) === -1);
+
+console.log(`Checked: ${checkedDomains.length}, skipped ${skippedUrls.length}: ${skippedUrls.join(", ")}`);
