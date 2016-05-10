@@ -89,6 +89,7 @@ module.exports = function init(options = {}) {
         phase: "response",
         contentType: "text/event-stream"
     }, function (req) {
+        console.log("SSE", req.fullUrl());
         features.sse = req.fullUrl();
     });
 
@@ -100,7 +101,7 @@ module.exports = function init(options = {}) {
         };
     });
 
-    //wsProxy(proxy._tlsSpoofingServer);
+    wsProxy(proxy._tlsSpoofingServer);
 
     proxy._sockets = [];
 

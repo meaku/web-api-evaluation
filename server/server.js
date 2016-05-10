@@ -52,6 +52,6 @@ server.listen(parseInt(port), () => {
 let connections = 0;
 server.on("connection", () => console.log("connections: " + ++connections));
 
-//init transports 
+//init transportsTable 
 websockets(server, resources);
 sse(server, resources);

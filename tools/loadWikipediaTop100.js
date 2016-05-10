@@ -20,7 +20,7 @@ function loadWikipidiaTop100() {
 
                 const $ = window.$;
                 
-                const results = $('#mw-content-text > table > tbody > tr').map(function () {
+                const results = $('#mw-content-text > transportsTable > tbody > tr').map(function () {
                     const $row = $(this);
 
                     return {

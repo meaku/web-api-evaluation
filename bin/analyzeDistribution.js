@@ -66,8 +66,9 @@ function filterRequests(requests) {
 
     res.matchingRequests = res.clientXhr.map((req) => {
 
-        const matchingServerResponse = requests.server.filter(serverRequest => serverRequest.url === req.url)[0] || {};
+        return requests.server.filter(serverRequest => serverRequest.url === req.url)[0] || {};
 
+        /*
         const res = {
             url: req.url,
             method: matchingServerResponse.method,
@@ -75,9 +76,19 @@ function filterRequests(requests) {
             contentType: matchingServerResponse.contentType,
             duration: req.duration
         };
+        */
 
+
+    });
+
+    res.matchingRequests = res.matchingRequests.filter((res) => {
+        return res.contentType.indexOf("text") !== -1 || res.contentType.indexOf("application") !== -1;
+    });
+
+    res.matchingRequests.forEach((res) => {
         mergedRequestTable.push([res.url, res.method || "", res.duration || "", res.contentLength || "", res.contentType || ""]);
     });
+
 
     //console.log(requestTable.toString());
     console.log(mergedRequestTable.toString());
@@ -94,8 +105,8 @@ Object.keys(results)
                 result.features.websockets !== false,
                 result.features.sse,
                 result.features.serviceWorker,
-                result.features.localStorage > 0,
-                result.features.sessionStorage > 0,
+                result.features.localStorage,
+                result.features.sessionStorage,
                 result.features.indexedDBs.length > 0,
                 result.features.applicationCache
         ]);
@@ -103,12 +114,18 @@ Object.keys(results)
         const lastIndex = table.length - 1;
 
         table[lastIndex] = table[lastIndex].map((elem) => {
+            if (elem === false || elem === 0) {
+                return "";
+            }
+
+            if(Number.isInteger(elem)) {
+                return "\\checkmark (" + elem +")";
+            }
+
             if (elem === true) {
                 return "\\checkmark";
             }
-            if (elem === false) {
-                return "";
-            }
+
             return elem;
         });
 
