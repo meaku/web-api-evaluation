@@ -77,8 +77,6 @@ function filterRequests(requests) {
             duration: req.duration
         };
         */
-
-
     });
 
     res.matchingRequests = res.matchingRequests.filter((res) => {
@@ -88,7 +86,6 @@ function filterRequests(requests) {
     res.matchingRequests.forEach((res) => {
         mergedRequestTable.push([res.url, res.method || "", res.duration || "", res.contentLength || "", res.contentType || ""]);
     });
-
 
     //console.log(requestTable.toString());
     console.log(mergedRequestTable.toString());

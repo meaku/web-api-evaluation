@@ -15,7 +15,7 @@ const texChars = {
 };
 
 const transportsTable = new Table({
-    head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "Server-Sent Events"],
+    head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "SSE"],
     colWidths: [20, 20, 20, 20, 20, 20],
     chars: texChars
 });
@@ -28,127 +28,137 @@ const offlineTbl = new Table({
 
 
 const requestsTbl = new Table({
-    head: ["Domain", "Total", "API", "Min", "Max", "Median", "Max Domain"],
-    colWidths: [35, 10, 10, 10, 10, 10, 40],
+    head: ["Domain", "Requests", "Min", "Max", "Median", "Std Deviation", "Max Domain"],
+    colWidths: [35, 10, 10, 10, 20, 20, 40],
     chars: texChars
 });
+
+const requestDestinationsTable = new Table({
+    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    colWidths: [35, 20, 20, 20, 20],
+    chars: texChars
+});
+
+const apiFilter = (req) => req.fileType === "json" || req.fileType === "api" || !req.fileType;
+
+function filterByDomain(domain) {
+    return function (req) {
+        const hostname = req.parsed.hostname;
+
+        if (!hostname) {
+            return false;
+        }
+
+        //compare on hostname level
+        const domainSplit = domain.split(".");
+        domainSplit.splice(0, domainSplit.length - 2);
+
+        const urlParts = hostname.split(".");
+        req.baseUrl = urlParts[urlParts.length - 2] + "." + urlParts[urlParts.length - 1];
+
+        return req.baseUrl === domainSplit.join(".");
+    }
+}
+
+function analyzeRequestDestinations(requests) {
+    const domains = {};
+
+    requests.forEach((req) => {
+        const hostname = req.parsed.hostname;
+
+        if (!domains[hostname]) {
+            domains[hostname] = 1;
+        }
+        else {
+            domains[hostname]++;
+        }
+    });
+
+    return domains;
+}
 
 
 function findByValue(arr, field, value) {
     return arr.filter((entry) => {
-        if(entry[field] == value) {
+        if (entry[field] == value) {
             return entry;
         }
     })[0];
 }
 
 function analyzeRequests(requests, domain) {
-    requests = requests.map((req) => {
-        req.duration = parseInt(req.duration);
-        return req;
-    });
-
-
-     /*
-     Url {
-     protocol: 'https:',
-     slashes: true,
-     auth: null,
-     host: 'static.licdn.com',
-     port: null,
-     hostname: 'static.licdn.com',
-     hash: null,
-     search: null,
-     query: null,
-     pathname: '/sc/h/',
-     path: '/sc/h/47j',
-     href: 'https://static.licdn.com/sc/h/4u1isxjql2nskjds506r57zgp,e5zbo7jy9195flxuvyz0h2zjl,9ddpx3f38zululxuff5qms9fe,8edocauah45tnbjtbsti9wwc,aoy5buyx8suurwvmrz22am4u,arujd67wbm42utg760rtfzqz4,9nm4kj0n3xnmh85rgzq9ik8p1,b2nsnb9f0lrwmztpnz18nprsi,17y2agt9kijbm7edheybmlk34,acxtdmj2an5n7uae4ihl64nhz,91k1r7exn7166bm650hyqztqu,8ji1es152cj0sbpicso3u9ysr,6sj2lrdl7mklt5nfhdeipr25v,f1baat77jr9wgsdfqq9ucsche,7bxv1r0qjrzof2nop4amzk18k,661u8mflwj094zbr3ia766ip3,aj2hzaieyl5o1ke1ftq9ea83q' }
-     */
     requests = requests
+    //determine file type by extension
         .map((req) => {
+            req.duration = parseInt(req.duration);
             req.parsed = url.parse(req.name);
 
             const pathParts = req.parsed.path.split(".");
 
-            if(pathParts.length < 2) {
+            if (pathParts.length === 1) {
                 req.fileType = "api";
             }
             else {
-                req.fileType = pathParts[pathParts.length-1];
+                req.fileType = pathParts[pathParts.length - 1];
             }
 
             return req;
         })
-        .filter((req) => req.fileType === "json" || req.fileType === "api" || !req.fileType)
-        .filter((req) => {
-            if(!req.parsed.hostname) {
-                return false;
-            }
+        //remove performance marker
+        .filter((req) => req.entryType !== "mark");
 
-            //compare on hostname level
-            const domainSplit = domain.split(".");
-            domainSplit.splice(0, domainSplit.length - 2);
 
-            const urlParts = req.parsed.hostname.split(".");
-            req.baseUrl = urlParts[urlParts.length - 2] + "." + urlParts[urlParts.length - 1];
+    const overallApiRequests = requests.filter(apiFilter);
 
-           return req.baseUrl === domainSplit.join(".");
-        });
+    const sameDomainRequests = requests.filter(filterByDomain(domain));
+    const sameDomainApiRequests = sameDomainRequests.filter(apiFilter);
 
-    const durations = requests.map((req) => req.duration);
+    const durations = sameDomainApiRequests.map(req => req.duration);
 
+    const destinations = {
+        overallCount: requests.length,
+        overallDomains: Object.keys(analyzeRequestDestinations(requests)).length,
+        overallApiRequests: overallApiRequests.length,
+        overallApiRequestsDomains: Object.keys(analyzeRequestDestinations(overallApiRequests)).length,
+        sameDomainCount: sameDomainRequests.length,
+        sameDomainDomains: Object.keys(analyzeRequestDestinations(sameDomainRequests)).length,
+        sameDomainApiCount: sameDomainApiRequests.length,
+        sameDomainApiDomains: Object.keys(analyzeRequestDestinations(sameDomainApiRequests)).length
+    };
+    
     const timings = {
         count: durations.length,
-        min: stats.min(durations),
-        max: stats.max(durations),
-        median: stats.median(durations),
-        mean: stats.mean(durations),
-        variance: stats.variance(durations),
-        standardDeviation: stats.standardDeviation(durations)
-    };
-    const urls = {
-        min: findByValue(requests, "duration", timings.min) || { parsed : {} } ,
-        max: findByValue(requests, "duration", timings.max) || { parsed: {} }
+        min: stats.min(durations) || "-",
+        max: stats.max(durations) || "-",
+        median: stats.median(durations) || "-",
+        mean: stats.mean(durations) || "-",
+        variance: stats.variance(durations) || "-",
+        standardDeviation: stats.standardDeviation(durations).toFixed(2) || "-"
     };
 
-    if(requests.length === 0) {
-        return {
-            count: 0,
-            timings: {
-                min: 0,
-                max: 0,
-                median: 0
-            },
-            urls: {
-                max: {
-                    parsed: {
-                        pathname: "",
-                        hostname: ""
-                    }
-                }
-            }
-        };
-    }
+    const urls = {
+        min: findByValue(sameDomainApiRequests, "duration", timings.min) || { parsed: {} },
+        max: findByValue(sameDomainApiRequests, "duration", timings.max) || { parsed: {} }
+    };
 
     return {
-        count: requests.length,
+        destinations,
         timings,
-        urls,
-        requests
+        urls
     };
 }
 
-function formatRow(rows){
+function formatRow(rows) {
     return rows.map((elem, idx) => {
-        if(idx === 0 || idx === 1) {
+        if (idx === 0 || idx === 1) {
             return elem;
         }
         if (elem === false || elem === 0) {
             return "";
         }
 
-        if(Number.isInteger(elem)) {
-            return "\\checkmark (" + elem +")";
+        if (Number.isInteger(elem)) {
+            return "\\checkmark (" + elem + ")";
         }
 
         if (elem === true) {
@@ -159,16 +169,14 @@ function formatRow(rows){
     });
 }
 
-console.log(Object.keys(results).length);
+console.log("Total: " + Object.keys(results).length);
 
 Object.keys(results)
-    .forEach((key) => {
-        const result = results[key];
-
-        const requests = analyzeRequests(result.requests.client, key);
+    .forEach((domain) => {
+        const result = results[domain];
 
         transportsTable.push(formatRow([
-            key,
+            domain,
             result.features.h2,
             result.features.websockets !== false,
             result.features.polling || false,
@@ -177,7 +185,7 @@ Object.keys(results)
         ]));
 
         offlineTbl.push(formatRow([
-            key,
+            domain,
             result.features.applicationCache,
             result.features.serviceWorker,
             result.features.localStorage,
@@ -185,17 +193,32 @@ Object.keys(results)
             result.features.indexedDBs && Object.keys(result.features.indexedDBs || {}).length
         ]));
 
+        const requests = analyzeRequests(result.requests.client, domain);
+
         requestsTbl.push([
-            key,
-            result.requests.client.length,
-            requests.count,
+            domain,
+            requests.destinations.sameDomainApiCount,
             requests.timings.min,
-            requests.timings.median,
             requests.timings.max,
-            requests.urls.max.parsed.hostname + "" + requests.urls.max.parsed.pathname
+            requests.timings.median,
+            requests.timings.standardDeviation,
+            requests.urls.max.parsed.hostname || "-"
         ]);
+
+
+        //head: ["Domain", "Overall", "Overall: API", "Same Domain", "Same Domain: API"]
+        requestDestinationsTable.push([
+            domain,
+            requests.destinations.overallCount + ` (${requests.destinations.overallDomains})`,
+            requests.destinations.sameDomainCount + ` (${requests.destinations.sameDomainDomains})`,
+            requests.destinations.overallApiRequests + ` (${requests.destinations.overallApiRequestsDomains})`,
+            requests.destinations.sameDomainApiCount + ` (${requests.destinations.sameDomainApiDomains})`
+        ]);
+
+
     });
 
-//console.log(transportsTable.toString());
-//console.log(offlineTbl.toString());
+console.log(transportsTable.toString());
+console.log(offlineTbl.toString());
 console.log(requestsTbl.toString());
+console.log(requestDestinationsTable.toString());
