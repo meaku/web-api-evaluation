@@ -5,14 +5,10 @@ const Table = require("cli-table");
 const stats = require("simple-statistics");
 
 const results = require("../results/loggedIn.json");
+const helpers = require("./helpers");
 
-
-const texChars = {
-    'top': '', 'top-mid': '', 'top-left': '', 'top-right': ''
-    , 'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': ''
-    , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
-    , 'right': '\\\\', 'right-mid': '', 'middle': '&'
-};
+const formatRow = helpers.formatRow([0, 1]);
+const { filterByApi, filterByDomain, findByValue, analyzeRequestDestinations, texChars, preProcessRequests } = helpers;
 
 const transportsTable = new Table({
     head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "SSE"],
@@ -26,9 +22,8 @@ const offlineTbl = new Table({
     chars: texChars
 });
 
-
 const requestsTbl = new Table({
-    head: ["Domain", "Requests", "Min", "Max", "Median", "Std Deviation", "Max Domain"],
+    head: ["Domain", "Requests", "Min", "Max", "Median", "\\sigma", "Max Domain"],
     colWidths: [35, 10, 10, 10, 20, 20, 40],
     chars: texChars
 });
@@ -39,79 +34,15 @@ const requestDestinationsTable = new Table({
     chars: texChars
 });
 
-const apiFilter = (req) => req.fileType === "json" || req.fileType === "api" || !req.fileType;
-
-function filterByDomain(domain) {
-    return function (req) {
-        const hostname = req.parsed.hostname;
-
-        if (!hostname) {
-            return false;
-        }
-
-        //compare on hostname level
-        const domainSplit = domain.split(".");
-        domainSplit.splice(0, domainSplit.length - 2);
-
-        const urlParts = hostname.split(".");
-        req.baseUrl = urlParts[urlParts.length - 2] + "." + urlParts[urlParts.length - 1];
-
-        return req.baseUrl === domainSplit.join(".");
-    }
-}
-
-function analyzeRequestDestinations(requests) {
-    const domains = {};
-
-    requests.forEach((req) => {
-        const hostname = req.parsed.hostname;
-
-        if (!domains[hostname]) {
-            domains[hostname] = 1;
-        }
-        else {
-            domains[hostname]++;
-        }
-    });
-
-    return domains;
-}
-
-
-function findByValue(arr, field, value) {
-    return arr.filter((entry) => {
-        if (entry[field] == value) {
-            return entry;
-        }
-    })[0];
-}
-
 function analyzeRequests(requests, domain) {
     requests = requests
-    //determine file type by extension
-        .map((req) => {
-            req.duration = parseInt(req.duration);
-            req.parsed = url.parse(req.name);
-
-            const pathParts = req.parsed.path.split(".");
-
-            if (pathParts.length === 1) {
-                req.fileType = "api";
-            }
-            else {
-                req.fileType = pathParts[pathParts.length - 1];
-            }
-
-            return req;
-        })
-        //remove performance marker
+        .map(preProcessRequests)
         .filter((req) => req.entryType !== "mark");
-
-
-    const overallApiRequests = requests.filter(apiFilter);
+    
+    const overallApiRequests = requests.filter(filterByApi);
 
     const sameDomainRequests = requests.filter(filterByDomain(domain));
-    const sameDomainApiRequests = sameDomainRequests.filter(apiFilter);
+    const sameDomainApiRequests = sameDomainRequests.filter(filterByApi);
 
     const durations = sameDomainApiRequests.map(req => req.duration);
 
@@ -125,7 +56,7 @@ function analyzeRequests(requests, domain) {
         sameDomainApiCount: sameDomainApiRequests.length,
         sameDomainApiDomains: Object.keys(analyzeRequestDestinations(sameDomainApiRequests)).length
     };
-    
+
     const timings = {
         count: durations.length,
         min: stats.min(durations) || "-",
@@ -148,32 +79,12 @@ function analyzeRequests(requests, domain) {
     };
 }
 
-function formatRow(rows) {
-    return rows.map((elem, idx) => {
-        if (idx === 0 || idx === 1) {
-            return elem;
-        }
-        if (elem === false || elem === 0) {
-            return "";
-        }
-
-        if (Number.isInteger(elem)) {
-            return "\\checkmark (" + elem + ")";
-        }
-
-        if (elem === true) {
-            return "\\checkmark";
-        }
-
-        return "\\checkmark (" + elem + ")";
-    });
-}
-
 console.log("Total: " + Object.keys(results).length);
 
 Object.keys(results)
     .forEach((domain) => {
         const result = results[domain];
+        const requests = analyzeRequests(result.requests.client, domain);
 
         transportsTable.push(formatRow([
             domain,
@@ -192,9 +103,7 @@ Object.keys(results)
             result.features.sessionStorage,
             result.features.indexedDBs && Object.keys(result.features.indexedDBs || {}).length
         ]));
-
-        const requests = analyzeRequests(result.requests.client, domain);
-
+        
         requestsTbl.push([
             domain,
             requests.destinations.sameDomainApiCount,
@@ -204,9 +113,7 @@ Object.keys(results)
             requests.timings.standardDeviation,
             requests.urls.max.parsed.hostname || "-"
         ]);
-
-
-        //head: ["Domain", "Overall", "Overall: API", "Same Domain", "Same Domain: API"]
+        
         requestDestinationsTable.push([
             domain,
             requests.destinations.overallCount + ` (${requests.destinations.overallDomains})`,
@@ -214,8 +121,6 @@ Object.keys(results)
             requests.destinations.overallApiRequests + ` (${requests.destinations.overallApiRequestsDomains})`,
             requests.destinations.sameDomainApiCount + ` (${requests.destinations.sameDomainApiDomains})`
         ]);
-
-
     });
 
 console.log(transportsTable.toString());
