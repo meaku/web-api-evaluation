@@ -7,8 +7,8 @@ const stats = require("simple-statistics");
 const results = require("../results/loggedIn.json");
 const helpers = require("./helpers");
 
-const formatRow = helpers.formatRow([0, 1]);
-const { filterByApi, filterByDomain, findByValue, analyzeRequestDestinations, texChars, preProcessRequests } = helpers;
+const formatRow = helpers.formatRow([0]);
+const { filterByApi, filterByDomain, findByValue, analyzeRequestDestinations, texChars, preProcessRequests, addStatsRow } = helpers;
 
 const transportsTable = new Table({
     head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "SSE"],
@@ -89,7 +89,7 @@ Object.keys(results)
         transportsTable.push(formatRow([
             domain,
             result.features.h2,
-            result.features.websockets !== false,
+            result.features.webSockets !== false,
             result.features.polling || false,
             result.features.longPolling || false,
             false
@@ -122,6 +122,12 @@ Object.keys(results)
             requests.destinations.sameDomainApiCount + ` (${requests.destinations.sameDomainApiDomains})`
         ]);
     });
+
+//Uncomment for copy&waste tables
+transportsTable.push(addStatsRow(transportsTable).map(stats => stats.percent));
+offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
+
+offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
 
 console.log(transportsTable.toString());
 console.log(offlineTbl.toString());

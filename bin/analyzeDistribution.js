@@ -6,7 +6,7 @@ const results = require("../results/top100_techDistribution.json");
 const top100domains = require("../data/top100Wikipedia.json").map((entry) => entry.domain);
 const formatRow = require("./helpers").formatRow;
 const helpers = require("./helpers");
-const { filterByApi, filterByDomain, texChars, preProcessRequests } = helpers;
+const { filterByApi, filterByDomain, texChars, preProcessRequests, addStatsRow } = helpers;
 
 const table = new Table({
     head: ["Domain", "H2", "WS", "SSE", "SW", "AC", "LS", "SS", "IDB"],
@@ -14,6 +14,7 @@ const table = new Table({
     chars: texChars
 });
 
+//responseHeaders["content-type"] text/event-stream
 
 function filterRequests(requests, domain) {
     const res = {};
@@ -33,6 +34,9 @@ function filterRequests(requests, domain) {
         return req;
     });
 
+    const SSECount = requests.server.filter((req) => {
+        return req.contentType.indexOf("text/event-stream") !== -1
+    });
 
     res.clientXhr = requests.client
         .filter(req => req.initiatorType === "xmlhttprequest" || req.initiatorType === "")
@@ -59,8 +63,6 @@ function filterRequests(requests, domain) {
                 res.contentType || ""
             ]);
         });
-
-    console.log(domain);
     console.log(mergedRequestTable.toString());
 
     return res;
@@ -84,6 +86,8 @@ Object.keys(results)
 
         filterRequests(result.requests, key);
     });
+
+table.push(addStatsRow(table).map(stats => stats.percent));
 
 console.log(table.toString());
 

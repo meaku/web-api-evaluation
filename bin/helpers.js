@@ -1,6 +1,7 @@
 "use strict";
 
 const url = require("url");
+const stats = require("simple-statistics");
 
 exports.preProcessRequests = (req) => {
     req.duration = parseInt(req.duration);
@@ -99,3 +100,57 @@ exports.texChars = {
     , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
     , 'right': '\\\\', 'right-mid': '', 'middle': '&'
 };
+
+
+function columnStats(column = []) {
+    const isNumeric = (value) => !isNaN(value) && value !== "" && value !== false;
+    const containsNumbers = column.filter(isNumeric).length > 0;
+    const withValue = column.filter(col => col !== false && col !== "");
+    const results = {
+        mean: "",
+        max: "",
+        percent: ""
+    };
+
+
+    if(containsNumbers) {
+
+        const cols = column.map((col) => {
+            if(!isNumeric(col)) {
+                return 0;
+            }
+            return col;
+        });
+
+
+        Object.assign(results, {
+            mean: stats.mean(cols) || "",
+            max: stats.max(cols) || ""
+        });
+    }
+
+
+    results.percent = (withValue.length / column.length) * 100;
+    return results;
+}
+
+exports.columnStats = columnStats;
+
+function toColumns(table) {
+    const columns = [];
+    
+    table.forEach((row, rowIdx) => {
+        row.forEach((column, columnIdx) => {
+            columns[columnIdx] = columns[columnIdx] || [];
+            columns[columnIdx][rowIdx] = column;
+        })
+    });
+    
+    return columns;
+}
+
+exports.addStatsRow = function addStatsRow(table) {
+    const columns = toColumns(table);
+    return columns.map(columnStats);
+};
+

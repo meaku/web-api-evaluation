@@ -6,7 +6,7 @@ const webdriver = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 const fork = require("child_process").fork;
 
-const results = require("../results/techDistribution.json");
+const results = require("../results/top100_techDistribution.json");
 
 class Proxy {
     constructor(domain, port){
@@ -65,21 +65,6 @@ const checkedDomains = Object.keys(results);
 websites = websites.filter((domain) => checkedDomains.indexOf(domain) === -1);
 
 console.log("Checking " + websites.length + " websites");
-
-/*
- const websites = [
- "nytimes.com",
- "twitter.com",
- "soundcloud.com",
- "github.com",
- "facebook.com",
- "youtube.com",
- "instagram.com",
- "web.whatsapp.com",
- "play.spotify.com",
- "stackoverflow.com"
- ];
- //*/
 
 function runTest(domain) {
     const proxyPort = port++;
