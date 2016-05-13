@@ -7,6 +7,16 @@ exports.preProcessRequests = (req) => {
     req.duration = parseInt(req.duration);
     req.parsed = url.parse(req.name);
 
+    /*
+    //TODO add more timing data when logging data and calculate diff
+    req.reqDuration = req.responseStart - req.requestStart;
+    req.resDuration = req.responseEnd - req.responseStart;
+
+    if(req.reqDuration > req.resDuration) {
+        req.longPolling = true;
+    }
+    */
+    
     const pathParts = req.parsed.path.split(".");
 
     if (pathParts.length === 1) {
@@ -114,7 +124,6 @@ function columnStats(column = []) {
 
 
     if(containsNumbers) {
-
         const cols = column.map((col) => {
             if(!isNumeric(col)) {
                 return 0;

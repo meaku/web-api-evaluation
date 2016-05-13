@@ -38,7 +38,7 @@ Promise.all(Object.keys(inResults).map((url) => {
 
                 console.log(url, res);
 
-                inResults[url].features.h2 =res;
+                inResults[url].features.h2 = res;
 
                 return {
                     url,

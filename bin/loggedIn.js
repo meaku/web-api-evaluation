@@ -34,10 +34,25 @@ const requestDestinationsTable = new Table({
     chars: texChars
 });
 
+const requestDistCountTable = new Table({
+    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    colWidths: [35, 20, 20, 20, 20],
+    chars: texChars
+});
+
+const requestDistDomainsTable = new Table({
+    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    colWidths: [35, 20, 20, 20, 20],
+    chars: texChars
+});
+
 function analyzeRequests(requests, domain) {
     requests = requests
         .map(preProcessRequests)
         .filter((req) => req.entryType !== "mark");
+
+    requests.filter((req) => req.longPolling === true)
+        .forEach(req => console.log(req.name));
     
     const overallApiRequests = requests.filter(filterByApi);
 
@@ -121,6 +136,22 @@ Object.keys(results)
             requests.destinations.overallApiRequests + ` (${requests.destinations.overallApiRequestsDomains})`,
             requests.destinations.sameDomainApiCount + ` (${requests.destinations.sameDomainApiDomains})`
         ]);
+
+        requestDistCountTable.push([
+            domain,
+            requests.destinations.overallCount,
+            requests.destinations.sameDomainCount,
+            requests.destinations.overallApiRequests,
+            requests.destinations.sameDomainApiCount
+        ]);
+
+        requestDistDomainsTable.push([
+            domain,
+            requests.destinations.overallDomains,
+            requests.destinations.sameDomainDomains,
+            requests.destinations.overallApiRequestsDomains,
+            requests.destinations.sameDomainApiDomains
+        ]);
     });
 
 //Uncomment for copy&waste tables
@@ -129,7 +160,14 @@ offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
 
 offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
 
+requestsTbl.push(addStatsRow(requestsTbl).map(stats => stats.mean));
+
+requestDistCountTable.push(addStatsRow(requestDistCountTable).map(stats => stats.mean));
+requestDistDomainsTable.push(addStatsRow(requestDistDomainsTable).map(stats => stats.mean));
+
 console.log(transportsTable.toString());
 console.log(offlineTbl.toString());
 console.log(requestsTbl.toString());
 console.log(requestDestinationsTable.toString());
+console.log(requestDistCountTable.toString());
+console.log(requestDistDomainsTable.toString());
