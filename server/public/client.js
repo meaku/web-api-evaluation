@@ -2,6 +2,60 @@
 
 const performance = window.performance;
 
+function streamedPollingFetch() {
+    function consume(reader) {
+        var total = 0;
+        return pump();
+
+        function pump() {
+            return reader
+                .read()
+                .then(({done, value}) => {
+                    if (done) {
+                        return
+                    }
+
+                    total += value.byteLength;
+                    console.log(`received ${value.byteLength} bytes (${total} bytes in total)`);
+                    return pump();
+                })
+        }}
+
+    fetch("/streamed-polling")
+        .then(res => consume(res.body.getReader()))
+        .then(() => console.log("done"))
+        .catch(e => console.error(e));
+}
+
+window.streamedPollingFetch = streamedPollingFetch;
+
+function streamedPolling() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/streamed-polling");
+    xhr.seenBytes = 0;
+
+    xhr.onreadystatechange = function() {
+        console.log(xhr.readyState);
+        if(xhr.readyState > 2) {
+            var newData = xhr.responseText.substr(xhr.seenBytes);
+            // process newData
+            console.log("newData", newData);
+
+            xhr.seenBytes = xhr.responseText.length;
+        }
+    };
+
+    xhr.onloadend = function() {
+        console.log("done");
+        //finished
+    };
+
+
+    xhr.send();
+}
+
+window.streamedPolling = streamedPolling;
+
 class WS {
     constructor(url) {
         this.ws = new WebSocket(url);
@@ -111,7 +165,6 @@ window.sse = function() {
     es.addEventListener("breaking-news", function (event) {
         console.log("Breaking News: ", event.data);
     });
-
 };
 
 window.start = function (type) {

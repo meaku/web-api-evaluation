@@ -39,6 +39,7 @@ app = api;
 
 //http version
 if (httpVersion === "http2") {
+    app.http2 = true;
     server = spdy.createServer(options, app);
 }
 else {

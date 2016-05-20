@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const resources = require("./lib/resources");
+const EventStream = require("./lib/EventStream");
 
 const express = require("express");
 var app = express();
@@ -13,8 +14,54 @@ app.use((req, res, next) => {
 
 app.use(express.static(__dirname + "/public"));
 
+/*
+ app.get("/polling", (req, res, next) => {
+ const eventStream = new EventStream();
+
+ const timeout =  setTimeout(() => {
+ res.json({});
+ }, 10000);
+
+ eventStream.once("data", (data) => {
+ res.json(data);
+ clearTimeout(timeout);
+ });
+ });
+ */
+
+app.get("/long-polling", (req, res) => {
+    const eventStream = new EventStream();
+    const timeout = setTimeout(() => {
+        res.json({});
+    }, 10000);
+
+    eventStream.once("data", (data) => {
+        res.json(data);
+        clearTimeout(timeout);
+    });
+});
+
+app.get("/streamed-polling", (req, res) => {
+    if (!app.http2) {
+        res.set("Transfer-encoding", "chunked");
+    }
+
+    res.write("{ ok: true }");
+
+    const eventStream = new EventStream(1000);
+
+    setTimeout(() => {
+        eventStream.removeAllListeners();
+        res.end();
+    }, 30000);
+
+    eventStream.on("data", (data) => {
+        res.write(JSON.stringify(data));
+    });
+});
+
 app.get("/:resource/:id?", (req, res) => {
-    if(!resources[req.params.resource]) {
+    if (!resources[req.params.resource]) {
         res.json({
             error: "invalid-resource"
         });
@@ -24,21 +71,21 @@ app.get("/:resource/:id?", (req, res) => {
 
     let resource = resources[req.params.resource];
 
-    if(!req.params.id) {
+    if (!req.params.id) {
         resource.readCollection().then((data) => res.json(data));
         return;
     }
-    
+
     const id = req.params.id - 1;
 
     resource.read(resource[id])
         .then((data) => res.json(data))
         .catch((err) => {
             console.error(err);
-            
+
             res.json({
                 error: "not-found"
-            });     
+            });
         });
 });
 
