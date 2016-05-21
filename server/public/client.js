@@ -2,6 +2,48 @@
 
 const performance = window.performance;
 
+function conjestLane(duration) {
+    return fetch(`/delay/${duration}`);
+}
+
+function rushHour(lanes, duration) {
+    const promises = [];
+    
+    for(let i = 0; i <= lanes; i++) {
+        promises.push(conjestLane(duration));
+    }
+    
+    return fetch(`/planets/1`)
+        .then(() => console.log("done"));
+}
+
+function streamedFetch() {
+    function consume(reader) {
+        var total = 0;
+        return pump();
+
+        function pump() {
+            return reader
+                .read()
+                .then(({done, value}) => {
+                    if (done) {
+                        return
+                    }
+
+                    total += value.byteLength;
+                    console.log(`received ${value.byteLength} bytes (${total} bytes in total)`);
+                    return pump();
+                })
+        }}
+
+    fetch("/planets")
+        .then(res => consume(res.body.getReader()))
+        .then(() => console.log("done"))
+        .catch(e => console.error(e));
+}
+
+window.streamedFetch = streamedFetch;
+
 function streamedPollingFetch() {
     function consume(reader) {
         var total = 0;

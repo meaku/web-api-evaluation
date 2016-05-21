@@ -29,6 +29,10 @@ app.use(express.static(__dirname + "/public"));
  });
  */
 
+app.get("/delay/:delay", (req, res) => {
+   setTimeout(() => res.json({}), req.params.delay);
+});
+
 app.get("/long-polling", (req, res) => {
     const eventStream = new EventStream();
     const timeout = setTimeout(() => {

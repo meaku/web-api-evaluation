@@ -1,8 +1,8 @@
 "use strict";
 
-const Table = require("cli-table");
+const Table = require("../helpers/latexTable");
 const url = require("url");
-const results = require("../results/top100_techDistribution.json");
+const results = require("../results/__top100_techDistribution.json");
 const top100domains = require("../data/top100Wikipedia.json").map((entry) => entry.domain);
 const formatRow = require("./helpers").formatRow;
 const helpers = require("./helpers");
@@ -11,7 +11,9 @@ const { filterByApi, filterByDomain, texChars, preProcessRequests, addStatsRow }
 const table = new Table({
     head: ["Domain", "H2", "WS", "SSE", "SW", "AC", "LS", "SS", "IDB"],
     colWidths: [30, 20, 20, 20, 20, 20, 20, 20, 20],
-    chars: texChars
+    chars: texChars,
+    label: "table:evaluation-pervasiveness-top100",
+    caption: "Pervasiveness of Browser Networking APIs: Top 100 websites"
 });
 
 //responseHeaders["content-type"] text/event-stream
@@ -87,9 +89,9 @@ Object.keys(results)
         filterRequests(result.requests, key);
     });
 
-table.push(addStatsRow(table).map(stats => stats.percent));
+//table.push(addStatsRow(table).map(stats => stats.percent));
 
-console.log(table.toString());
+console.log(table.toLatex());
 
 const checkedDomains = Object.keys(results);
 const skippedUrls = top100domains.filter((domain) => checkedDomains.indexOf(domain) === -1);
