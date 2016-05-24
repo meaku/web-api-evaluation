@@ -214,7 +214,7 @@ window.start = function (type) {
     let benchInstance;
 
     if (type === "ws") {
-        const ws = new WS("wss://localhost:3002");
+        const ws = new WS(`wss://${window.location.hostname}:${window.location.port}`);
         benchInstance = ws.connected.then(() => {
             return bench(() => loadPlanets(ws.fetch.bind(ws)));
         });
@@ -228,7 +228,3 @@ window.start = function (type) {
 
     benchInstance.then(() => console.log("done"));
 };
-
-
-
-

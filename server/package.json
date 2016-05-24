@@ -4,7 +4,9 @@
   "description": "various web api evaluations",
   "main": "index.js",
   "scripts": {
-    "start": "node ./server.js"
+    "start": "npm-run-all --parallel startH1 startH2",
+    "startH2": "node ./server.js",
+    "startH1": "node ./server.js --port 3001 --httpVersion http1.1"
   },
   "repository": {
     "type": "git",
@@ -19,6 +21,7 @@
   "dependencies": {
     "express": "^4.13.4",
     "glob-promise": "^1.0.6",
+    "npm-run-all": "^2.1.1",
     "spdy": "^3.3.2",
     "sse": "0.0.6",
     "when": "^3.7.7",
