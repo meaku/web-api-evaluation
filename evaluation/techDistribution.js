@@ -61,8 +61,8 @@ class Proxy {
 let websites = require("../data/top100Wikipedia.json").map((website) => website.domain);
 let port = 9000;
 
-const checkedDomains = Object.keys(results);
-websites = websites.filter((domain) => checkedDomains.indexOf(domain) === -1);
+//const checkedDomains = Object.keys(results);
+//websites = websites.filter((domain) => checkedDomains.indexOf(domain) === -1);
 
 console.log("Checking " + websites.length + " websites");
 
@@ -157,6 +157,7 @@ function run(urls, results = {}) {
 
     return runTest(url)
         .then((res) => {
+            console.log(url, res);
             results[url] = res;
             return run(urls, results);
         })

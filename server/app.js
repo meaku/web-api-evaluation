@@ -80,15 +80,16 @@ app.get("/:resource/:id?", (req, res) => {
         return;
     }
 
-    const id = req.params.id - 1;
-
-    resource.read(resource[id])
+    const id = req.params.id;
+    
+    resource.read(id)
         .then((data) => res.json(data))
         .catch((err) => {
             console.error(err);
 
             res.json({
-                error: "not-found"
+                error: "not-found",
+                id
             });
         });
 });
