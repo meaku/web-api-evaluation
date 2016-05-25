@@ -34,11 +34,16 @@ class NetworkLimiter {
         return this._exec("sudo tc qdisc del dev eth0 root")
             .catch(err => {
                 //ignore: there are no existing rules defined for qdisc
-                if(err.indexOf("RTNETLINK answers: No such file or directory") !== -1) {
-                    return resolve();
+                return Promise.resolve();
+                /*
+                console.log("err.message", err.message);
+                if(err.message.indexOf("RTNETLINK answers: No such file or directory") !== -1) {
+                    console.log("resiled");
+
                 }
 
                 throw err;
+                */
             });
     }
 }

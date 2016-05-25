@@ -16,26 +16,10 @@ const conditions = {
             transport: "ws",
             url: hosts.h1
         }
-    ],
-    "compression": [
-        {
-            transport: "h1",
-            compression: true,
-            url: hosts.h1
-        },
-        {
-            transport: "h2",
-            compression: true,
-            url: hosts.h2
-        },
-        {
-            transport: "ws",
-            compression: true,
-            url: hosts.h1
-        }
     ]
 };
 
+//TODO make helper
 Object.keys(conditions).forEach(key => {
     let variations = [];
 
@@ -50,15 +34,21 @@ Object.keys(conditions).forEach(key => {
     conditions[key] = variations;
 });
 
-function runSimulation(callback) {
-    start().then(res => callback(res));
+function runSimulation(config, callback) {
+    start(config.transport).then(res => callback(res.duration));
 }
 
-module.exports = function benchmark(driver, url) {
-    driver.get(url);
+exports.conditions = conditions;
+exports.runner = function benchmark(driver, config) {
+    if(!config) {
+        return Promise.reject(new Error("Missing config"));
+    }
+
+    driver.get(config.url);
     driver.manage().timeouts().setScriptTimeout(100000);
-    return driver.executeAsyncScript(runSimulation);
+    return driver.executeAsyncScript(runSimulation,[config])
+        .then((results) => {
+            return results;
+        });
 };
-
-
 

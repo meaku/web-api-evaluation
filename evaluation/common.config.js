@@ -1,6 +1,7 @@
 "use strict";
 
 exports.networkConnections = {
+    /*
     "2G": {
         latency: "650ms"
     },
@@ -13,6 +14,7 @@ exports.networkConnections = {
     "DSL": {
         latency: "35ms"
     },
+    */
     "Cable": {
         latency: "20ms"
     },

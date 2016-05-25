@@ -1,19 +1,22 @@
 "use strict";
 
 const webdriver = require("selenium-webdriver");
+const { inspect } = require("util");
 
 const sequence = require("when/sequence");
+const guard = require("when/guard");
+
 const { NetworkLimiter } = require("./helpers");
 
 const limiter = new NetworkLimiter();
 
 const simulations = require("./simulations");
 
-function getDriver() {
+function getDriver(browser = "chrome") {
     //global settings
     const driver = new webdriver.Builder()
         .usingServer("http://192.168.99.100:4444/wd/hub")
-        .forBrowser("firefox")
+        .forBrowser(browser)
         .build();
 
     driver.manage().timeouts().setScriptTimeout(50000);
@@ -21,62 +24,66 @@ function getDriver() {
     return driver;
 }
 
-const conditions = {
-    "2G": {
-        latency: "650ms"
-    },
-    "3G": {
-        latency: "300ms"
-    },
-    "4G": {
-        latency: "100ms"
-    },
-    "DSL": {
-        latency: "35ms"
-    },
-    "Cable": {
-        latency: "20ms"
-    },
-    "Fiber": {
-        latency: "10ms"
-    }
-};
+function runSimulation(conditions, runner) {
+    const sets = conditions.map(condition => {
 
-//duplicate conditions by looping and adding different urls?
+        return function run() {
+            const driver = getDriver(condition.browser);
 
-function runSimulation(simulation) {
-    //TODO make dynamic
-    const url = "https://192.168.99.100:3001";
+            console.log("running", condition);
 
-    const sets = Object.keys(conditions).map(conditionName => {
-        const condition = conditions[conditionName];
-
-        return function run(url) {
-            console.log("Running :" + conditionName);
-
-            const driver = getDriver();
-
-            return limiter.throttle(condition.latency)
-                .then(() => simulation(driver, url))
+            return limiter.throttle(condition.latency || "0ms")
+                .then(() => runner(driver, condition))
                 .then((result) => {
-                    console.log(result);
-
                     return driver.quit()
                         .then(() => {
                             return {
-                                name: conditionName,
-                                result
+                                condition, result
                             }
                         });
                 });
         }
     });
 
-    return sequence(sets, url);
+    return sequence(sets);
 }
 
-runSimulation(simulations.multipleSmallRequests)
-    .then((res) => console.log(res));
+const run = guard(guard.n(1), runSimulation);
+
+function runGroup(simulation, name) {
+    let { conditions, runner } = simulation;
+
+    if (Array.isArray(conditions)) {
+        conditions = {
+            main: conditions
+        };
+    }
+
+    return Promise.all(
+        Object
+            .keys(conditions)
+            .map(conditionName => {
+                return run(conditions[conditionName], runner)
+                    .then((results) => {
+                        return {
+                            name,
+                            results
+                        };
+                    });
+            })
+    );
+}
+
+Promise.all(
+    Object
+        .keys(simulations)
+        .map(key => runGroup(simulations[key], key))
+    )
+    .then(res => {
+
+        //console.log(inspect(res, { depth: null, colors: true }));
+        process.exit(0);
+    });
 
 process.on("unhandledRejection", (err) => console.error(err));
 
