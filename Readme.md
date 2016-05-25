@@ -34,4 +34,6 @@ sudo tc qdisc add dev eth0 root netem delay 500ms
 
 sudo tcpdump -i eth0 -q '(tcp port 3002)'
 
+Certain period: sudo tcpdump -G 10 -W 1 -w myfile -i eth0 -s 0 -q '(tcp port 3001)'  
+
 Wireshark: sudo tcpdump -i wlan0 -s 0 -w output.dump tcp port 80 
