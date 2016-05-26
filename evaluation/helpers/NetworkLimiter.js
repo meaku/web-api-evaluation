@@ -31,7 +31,7 @@ class NetworkLimiter {
         log(`Limit latency: ${latency}`);
 
         return this.reset()
-            .then(() => this._exec(`sudo tc qdisc add dev eth0 root netem delay ${latency} rate ${bandwidth}`));
+            .then(() => this._exec(`sudo tc qdisc add dev eth0 root netem delay ${latency}`));
     }
 
     reset() {
