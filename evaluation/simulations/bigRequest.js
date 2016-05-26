@@ -25,15 +25,30 @@ const conditions = {
 
 addNetworkingVariations(conditions);
 
+
 function clientScript(config, callback) {
-    start(config.transport).then(res => {
+    performance.mark(`bigFile-start`);
 
-        //append some more data
-        res.requests = window.performance.getEntries();
-        res.timing = window.performance.timing;
+    return fetch("/file/big.json")
+        .then(res => {
+            //Only the stream is readable!
+            performance.mark("bigFile-received");
+            return res.json()
+        })
+        .then(() => {
+            performance.mark("bigFile-decoded");
+            performance.mark("bigFile-end");
 
-        callback(res);
-    });
+            const marks = window.performance.getEntries().filter((entry) => entry.entryType === "mark");
+            console.table(marks);
+
+            window.benchDone = true;
+            document.body.style.background = "green";
+
+            callback({
+                duration: marks[marks.length - 1].startTime - marks[0].startTime
+            });
+        })
 }
 
 function runner(driver, config) {
@@ -49,22 +64,23 @@ function runner(driver, config) {
 function analyze(res) {
     let results = res.transports;
 
-    results
+    results = results
         .map(result => {
             result.connectionName = result.condition.connectionName;
             result.transport = result.condition.transport;
             return result;
         })
-        .sort(sortBy("connectionName", "transport"))
-        .forEach(transport => {
-            console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
-        });
+        .sort(sortBy("connectionName", "transport"));
+
+    results.forEach(transport => {
+        console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
+    });
 }
 
 function run() {
     runSimulation(conditions, runner)
         .then((res) => {
-            saveResults("multipleSmallRequests", res);
+            saveResults("bigRequest", res);
 
             analyze(res);
         });

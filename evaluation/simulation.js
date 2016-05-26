@@ -1,7 +1,6 @@
 "use strict";
 
 const webdriver = require("selenium-webdriver");
-const { inspect } = require("util");
 
 const sequence = require("when/sequence");
 const guard = require("when/guard");
@@ -9,8 +8,6 @@ const guard = require("when/guard");
 const { NetworkLimiter } = require("./helpers");
 
 const limiter = new NetworkLimiter();
-
-const simulations = require("./simulations");
 
 function getDriver(browser = "chrome") {
     //global settings
@@ -32,7 +29,7 @@ function runSimulation(conditions, runner) {
 
             console.log("running", condition);
 
-            return limiter.throttle(condition.latency || "0ms")
+            return limiter.throttle(condition.latency || false)
                 .then(() => runner(driver, condition))
                 .then((result) => {
                     return driver.quit()
@@ -50,12 +47,10 @@ function runSimulation(conditions, runner) {
 
 const run = guard(guard.n(1), runSimulation);
 
-function runGroup(simulation, name) {
-    let { conditions, runner } = simulation;
-
+function runGroup(conditions, runner) {
     if (Array.isArray(conditions)) {
         conditions = {
-            main: conditions
+            "default": conditions
         };
     }
 
@@ -63,27 +58,27 @@ function runGroup(simulation, name) {
         Object
             .keys(conditions)
             .map(conditionName => {
-                return run(conditions[conditionName], runner)
-                    .then((results) => {
-                        return {
-                            name,
-                            results
-                        };
-                    });
+               return run(conditions[conditionName], runner)
+                   .then(result => {
+                       return {
+                           name: conditionName,
+                           result
+                       };
+                   });
             })
-    );
-}
-
-Promise.all(
-    Object
-        .keys(simulations)
-        .map(key => runGroup(simulations[key], key))
     )
-    .then(res => {
+        .then((results) => {
+            //remap
+            const res = {};
 
-        //console.log(inspect(res, { depth: null, colors: true }));
-        process.exit(0);
-    });
+            results.forEach((result) => {
+                res[result.name] = result.result;
+            });
+
+            return res;
+        });
+}
 
 process.on("unhandledRejection", (err) => console.error(err));
 
+module.exports = runGroup;

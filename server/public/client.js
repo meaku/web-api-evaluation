@@ -172,7 +172,7 @@ function loadPlanets(fetch) {
 function bench(testSet) {
     performance.mark("overall-start");
 
-    testSet()
+    return testSet()
         .then(() => {
             performance.mark("overall-end");
 
@@ -184,6 +184,11 @@ function bench(testSet) {
             console.log("done: ", marks[marks.length - 1].startTime - marks[0].startTime);
             window.benchDone = true;
             document.body.style.background = "green";
+
+            return {
+                marks,
+                duration: marks[marks.length - 1].startTime - marks[0].startTime
+            };
         })
         .catch((err) => console.error(err, err.stack));
 }
@@ -196,7 +201,7 @@ window.sse = function() {
     };
 
     es.onerror = function(err) {
-        console.error("An error occured: " + err.message);
+        console.error("An error occurred: " + err.message);
     };
 
     es.onmessage = function (event) {
@@ -209,11 +214,10 @@ window.sse = function() {
     });
 };
 
-window.start = function (type) {
-
+window.start = function (transport) {
     let benchInstance;
 
-    if (type === "ws") {
+    if (transport === "ws") {
         const ws = new WS(`wss://${window.location.hostname}:${window.location.port}`);
         benchInstance = ws.connected.then(() => {
             return bench(() => loadPlanets(ws.fetch.bind(ws)));
@@ -226,5 +230,30 @@ window.start = function (type) {
         }))
     }
 
-    benchInstance.then(() => console.log("done"));
+    return benchInstance;
+};
+
+window.bigFile = function() {
+    performance.mark(`bigFile-start`);
+
+    return fetch("/file/big.json")
+        .then(res => {
+            //Only the stream is readable!
+            performance.mark("bigFile-received");
+            return res.json()
+        })
+        .then(() => {
+            performance.mark("bigFile-decoded");
+            performance.mark("bigFile-end");
+
+            const marks = window.performance.getEntries().filter((entry) => entry.entryType === "mark");
+            console.table(marks);
+
+            window.benchDone = true;
+            document.body.style.background = "green";
+
+            return {
+                duration: marks[marks.length - 1].startTime - marks[0].startTime
+            };
+        })
 };

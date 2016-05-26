@@ -26,6 +26,7 @@
     "selenium-webdriver": "^2.53.2",
     "sequest": "^0.9.0",
     "simple-statistics": "^2.0.0-beta1",
+    "sort-by": "^1.1.1",
     "spdy": "^3.3.2",
     "sse": "0.0.6",
     "wd": "^0.4.0",

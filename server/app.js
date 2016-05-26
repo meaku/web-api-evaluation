@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require("fs");
+const path = require("path");
 const resources = require("./lib/resources");
 const EventStream = require("./lib/EventStream");
 
@@ -29,6 +30,19 @@ app.use(express.static(__dirname + "/public"));
  });
  */
 
+app.get("/file/:name", function (req, res, next) {
+    var options = {
+        root: path.join(__dirname, "/data/files/"),
+        dotfiles: "deny"
+    };
+
+    res.sendFile(req.params.name, options, (err) => {
+        if (err) {
+            console.log(err);
+            res.status(err.status).end();
+        }
+    });
+});
 app.get("/delay/:delay", (req, res) => {
    setTimeout(() => res.json({}), req.params.delay);
 });

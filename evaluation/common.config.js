@@ -1,25 +1,31 @@
 "use strict";
 
 exports.networkConnections = {
-    /*
+    ///*
     "2G": {
-        latency: "650ms"
+        latency: "650ms",
+        bandwidth: "200kbits"
     },
     "3G": {
-        latency: "300ms"
+        latency: "300ms",
+        bandwidth: "2mbits"
     },
     "4G": {
-        latency: "100ms"
+        latency: "100ms",
+        bandwidth: "10mbits"
     },
     "DSL": {
-        latency: "35ms"
+        latency: "35ms",
+        bandwidth: "25mbits"
     },
-    */
+    //*/
     "Cable": {
-        latency: "20ms"
+        latency: "20ms",
+        bandwidth: "50mbits"
     },
     "Fiber": {
-        latency: "10ms"
+        latency: "10ms",
+        bandwidth: "100mbits"
     }
 };
 

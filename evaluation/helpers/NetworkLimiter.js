@@ -23,11 +23,15 @@ class NetworkLimiter {
         });
     }
     
-    throttle(latency = "10ms", bandwidth) {
+    throttle(latency = "10ms", bandwidth = "100Mbit") {
+        if(latency === false) {
+            return this.reset();
+        }
+
         log(`Limit latency: ${latency}`);
 
         return this.reset()
-            .then(() => this._exec(`sudo tc qdisc add dev eth0 root netem delay ${latency}`));
+            .then(() => this._exec(`sudo tc qdisc add dev eth0 root netem delay ${latency} rate ${bandwidth}`));
     }
 
     reset() {
