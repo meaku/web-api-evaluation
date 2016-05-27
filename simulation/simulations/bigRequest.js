@@ -2,7 +2,7 @@
 
 const { hosts } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
-const { htmlTable, chartDataByNetwork, chart } = require("../../helpers");
+const { networks, toChartSeries, chart } = require("../../helpers");
 const sortBy = require("sort-by");
 
 const runSimulation = require("../simulation");
@@ -25,7 +25,6 @@ const conditions = {
 };
 
 addNetworkingVariations(conditions);
-
 
 function clientScript(config, callback) {
     performance.mark(`bigFile-start`);
@@ -69,21 +68,59 @@ function analyze(res) {
         .map(result => {
             result.connectionName = result.condition.connectionName;
             result.transport = result.condition.transport;
+            result.duration = result.result.duration;
             return result;
-        })
-        .sort(sortBy("connectionName", "transport"));
+        });
 
     results.forEach(transport => {
-        console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
+        console.log(transport.transport, transport.condition.connectionName, transport.result.duration);
     });
 
-    const table = htmlTable({
-        header: ["HTTP/1.1", "HTTP/2", "WebSockets"],
-        rows: chartDataByNetwork(results)
-    });
+    const series = toChartSeries(
+        results,
+        "transport",
+        "duration",
+        {
+            h1: "HTTP/1.1",
+            h2: "HTTP/2",
+            ws: "Websocket"
+        }
+    );
 
-    chart("Big Request", table, __dirname + "/BigRequests.html");
-
+    chart({
+        chart: {
+            type: "column",
+            renderTo: "container",
+            forExport: true,
+            width: 600,
+            height: 400
+        },
+        title: {
+            text: "Big Request"
+        },
+        xAxis: {
+            categories: networks
+        },
+        yAxis: {
+            //allowDecimals: false,
+            title: {
+                text: "Load Time"
+            }
+        },
+        plotOptions: {
+            series: {
+                dataLabels: {
+                    shape: "callout",
+                    backgroundColor: "rgba(0, 0, 0, 0.75)",
+                    style: {
+                        color: "#FFFFFF",
+                        textShadow: "none"
+                    }
+                }
+            }
+        },
+        series
+    }, __dirname + "/Big-Request.pdf");
 }
 
 function run() {
@@ -96,4 +133,6 @@ function run() {
 }
 
 run();
+
+//analyze(require("../../results/bigRequest.json"));
 

@@ -1,0 +1,80 @@
+
+<html>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"
+        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+
+<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+
+    <table id="datatable">
+        <thead>
+        <tr>
+        <th></th>
+
+    
+        <th>HTTP/1.1</th>
+    
+        <th>HTTP/2</th>
+    
+        <th>WebSockets</th>
+    
+    </tr>
+    </thead>
+    <tbody>
+    
+        <tr>
+            <th>2G</th>
+            <td>11151.44</td>,<td>3374.71</td>,<td>1988.885</td>
+        </tr>
+        <tr>
+            <th>3G</th>
+            <td>5193.87</td>,<td>1617.53</td>,<td>941.89</td>
+        </tr>
+        <tr>
+            <th>4G</th>
+            <td>1835.695</td>,<td>594.22</td>,<td>350.905</td>
+        </tr>
+        <tr>
+            <th>Cable</th>
+            <td>522.01</td>,<td>223.59</td>,<td>96.3399999999999</td>
+        </tr>
+        <tr>
+            <th>DSL</th>
+            <td>734.165</td>,<td>251.775</td>,<td>175.245</td>
+        </tr>
+        <tr>
+            <th>Fiber</th>
+            <td>325.55</td>,<td>172.01</td>,<td>74.67</td>
+        </tr>
+    
+    </tbody>
+    </table>
+    
+
+<script>
+    $(function () {
+
+        new Highcharts.Chart({
+            data: {
+                table: 'datatable'
+            },
+            chart: {
+                type: 'column',
+                renderTo: "container"
+            },
+            title: {
+                text: 'Rush Hour / 2 Lanes blocked'
+            },
+            yAxis: {
+                allowDecimals: false,
+                title: {
+                    text: 'Load Time'
+                }
+            }
+        });
+    });
+</script>
+</html>

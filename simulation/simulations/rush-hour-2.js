@@ -2,8 +2,9 @@
 
 const { hosts } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
-const { htmlTable, chartDataByNetwork, chart } = require("../../helpers");
 const sortBy = require("sort-by");
+
+const { chartTemplates } = require("../../helpers");
 
 const runSimulation = require("../simulation");
 
@@ -27,6 +28,9 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
+    fetch("/delay/10000?blab=2");
+    fetch("/delay/10000?blib=1");
+    
     start(config.transport).then(res => {
 
         //append some more data
@@ -50,36 +54,29 @@ function runner(driver, config) {
 function analyze(res) {
     let results = res.transports;
 
-    results
+    results = results
         .map(result => {
             result.connectionName = result.condition.connectionName;
             result.transport = result.condition.transport;
+            result.duration = result.result.duration;
             return result;
-        })
-        .sort(sortBy("connectionName", "transport"))
-        .forEach(transport => {
-            console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
         });
 
-
-    const table = htmlTable({
-        header: ["HTTP/1.1", "HTTP/2", "WebSockets"],
-        rows: chartDataByNetwork(results)
-    });
-
-    chart("Multiple Small Requests", table, __dirname + "/MultipleSmall.html");
-
-
+    chartTemplates.transportDuration("Rush Hour (2 Lanes blocked)",  __dirname + "/rushHour2.pdf", results);
 }
 
 function run() {
     runSimulation(conditions, runner)
         .then((res) => {
-            saveResults("multipleSmallRequests", res);
+            saveResults("rushHour2", res);
 
             analyze(res);
         });
 }
 
-run();
+const results = require("../../results/rushHour.json");
+
+analyze(results);
+
+//run();
 
