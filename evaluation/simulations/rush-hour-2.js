@@ -4,6 +4,8 @@ const { hosts } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
 const sortBy = require("sort-by");
 
+const { htmlTable, chartDataByNetwork, chart } = require("../../helpers");
+
 const runSimulation = require("../simulation");
 
 const conditions = {
@@ -60,9 +62,18 @@ function analyze(res) {
         })
         .sort(sortBy("connectionName", "transport"));
 
+    /*
     results.forEach(transport => {
         console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
     });
+    */
+
+    const table = htmlTable({
+        header: ["HTTP/1.1", "HTTP/2", "WebSockets"],
+        rows: chartDataByNetwork(results)
+    });
+
+    chart("Rush Hour / 2 Lanes blocked", table, __dirname + "/RushHour2.html");
 }
 
 function run() {
@@ -74,5 +85,9 @@ function run() {
         });
 }
 
-run();
+const results = require("../../results/rushHour.json");
+
+analyze(results);
+
+//run();
 

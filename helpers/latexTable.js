@@ -59,7 +59,7 @@ class LatexTable {
 
             return wrapper(options.caption, options.label, tabular(head, rows));
         };
-
+        
         return tbl;    
     }
 }

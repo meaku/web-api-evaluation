@@ -2,6 +2,7 @@
 
 const { hosts } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
+const { htmlTable, chartDataByNetwork, chart } = require("../../helpers");
 const sortBy = require("sort-by");
 
 const runSimulation = require("../simulation");
@@ -59,6 +60,16 @@ function analyze(res) {
         .forEach(transport => {
             console.log(transport.connectionName, transport.condition.transport, transport.result.duration);
         });
+
+
+    const table = htmlTable({
+        header: ["HTTP/1.1", "HTTP/2", "WebSockets"],
+        rows: chartDataByNetwork(results)
+    });
+
+    chart("Multiple Small Requests", table, __dirname + "/MultipleSmall.html");
+
+
 }
 
 function run() {
