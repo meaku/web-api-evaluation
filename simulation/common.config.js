@@ -25,7 +25,7 @@ exports.networkConnections = {
         latency: "20ms",
         bandwidth: "50mbits"
     },
-    "Fiber": {
+    "Fibre": {
         latency: "10ms",
         bandwidth: "100mbits"
     }

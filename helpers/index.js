@@ -1,5 +1,7 @@
 "use strict";
 
+const ss = require("simple-statistics");
+
 exports.htmlTable = require("./htmlTable");
 exports.latexTable = require("./latexTable");
 exports.chart = require("./charts");
@@ -93,6 +95,89 @@ exports.toChartSeries = function (results, name, data = "duration", names, sortE
 
     return Object.keys(chartSeries).map((key) => chartSeries[key]);
     */
+};
+
+/**
+ * filter marks by "request" and return pairs of url and start/end timings
+ *
+ * @param {Array} marks
+ * @returns {{requests: Array, timings: Array}}
+ */
+exports.requestDurations = function requestDurations(marks) {
+    const uniqueUrls = {};
+
+    marks.filter(e => e.name.indexOf("fetch") !== -1)
+        .forEach((mark) => {
+            const [type, name] = mark.name.split("-");
+
+            if(!uniqueUrls[name]) {
+                uniqueUrls[name] = {};
+            }
+
+            uniqueUrls[name][type] = mark.startTime;
+        });
+
+    const timings = Object.keys(uniqueUrls).map(url => {
+        const e = uniqueUrls[url];
+        return [e.fetchStart, e.fetchEnd]
+    });
+
+    return {
+        requests: Object.keys(uniqueUrls),
+        timings
+    }
+};
+
+/**
+ * calculate request distribution for given requests
+ *
+ * @param {Array} requests
+ * @param {Number=} chunks
+ * @returns {*}
+ */
+exports.requestDurationDistribution = function requestDurationDistribution(requests, chunks = 4) {
+    const durations = requests
+        //remove overall entry
+        .filter(r => r.name.indexOf("overall") === -1)
+        .map(r => r.duration);
+
+    const min = ss.min(durations);
+    const max = ss.max(durations);
+
+    const chunkSize = (max - min) / chunks;
+    //const chunkSize = max / chunks;
+
+    const groups = [];
+    let lastEnd = min;
+
+    for(let i = 0; i < chunks; i++) {
+        let max = lastEnd + chunkSize;
+        groups.push({
+            name: " < " + max,
+            min: lastEnd,
+            max: max,
+            count: 0,
+            entries: []
+        });
+
+        lastEnd = max;
+    }
+
+    function sort(durations, groups) {
+        durations.forEach(duration => {
+
+            groups.forEach(group => {
+                if(duration >= group.min && duration <= group.max) {
+                    group.count++;
+                    group.entries.push(duration);
+                }
+            });
+        });
+
+        return groups;
+    }
+
+    return sort(durations, groups);
 };
 
 exports.chartTemplates = require("./charts/templates");

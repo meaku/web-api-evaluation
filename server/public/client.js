@@ -177,12 +177,16 @@ function bench(testSet) {
         .then(() => {
             performance.mark("overall-end");
             performance.measure("overall", "overall-start", "overall-end");
-            
-            console.table(window.performance.getEntriesByType('measure'));
+
+            console.table(window.performance.getEntriesByType("measure"));
 
             console.log("done: ", window.performance.getEntriesByType("measure")[0].duration);
             window.benchDone = true;
             document.body.style.background = "green";
+
+            const requests = window.performance.getEntriesByType("marks").filter((e) => e.name.indexOf("fetch") !== -1);
+
+            console.table(requests);
 
             return {
                 measures: window.performance.getEntriesByType("measure"),
