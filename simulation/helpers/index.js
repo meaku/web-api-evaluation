@@ -1,10 +1,9 @@
 "use strict";
 
 const { networkConnections } = require("../common.config");
-const fs = require("fs");
-const path = require("path");
 
 exports.NetworkLimiter = require("./NetworkLimiter");
+exports.TrafficSniffer = require("./TrafficSniffer");
 
 exports.addNetworkingVariations = function(conditions, connectionSettings = networkConnections) {
     Object.keys(conditions).forEach(key => {
@@ -20,8 +19,4 @@ exports.addNetworkingVariations = function(conditions, connectionSettings = netw
 
         conditions[key] = variations;
     });
-};
-
-exports.saveResults = function(name, data) {
-  return fs.writeFileSync(path.resolve(__dirname, `../../results/${name}.json`), JSON.stringify(data));
 };

@@ -1,12 +1,11 @@
 "use strict";
 
-const { hosts } = require("../common.config.js");
-const { addNetworkingVariations, saveResults } = require("../helpers");
-const sortBy = require("sort-by");
-
+const { hosts, resultsDir } = require("../common.config.js");
+const { addNetworkingVariations } = require("../helpers");
 const { chartTemplates } = require("../../helpers");
-
 const runSimulation = require("../simulation");
+
+const resultDir = `${resultsDir}/rush-hour-2`;
 
 const conditions = {
     "transports": [
@@ -62,21 +61,15 @@ function analyze(res) {
             return result;
         });
 
-    chartTemplates.transportDuration("Rush Hour (2 Lanes blocked)",  __dirname + "/rushHour2.pdf", results);
+    chartTemplates.transportDuration("Rush Hour (2 Lanes blocked)", `${resultDir}/duration.pdf`, results);
 }
 
 function run() {
-    runSimulation(conditions, runner)
+    runSimulation(conditions, runner, resultDir)
         .then((res) => {
-            saveResults("rushHour2", res);
-
             analyze(res);
         });
 }
 
-const results = require("../../results/rushHour.json");
-
-analyze(results);
-
-//run();
+run();
 

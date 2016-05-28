@@ -158,6 +158,7 @@ function loadPlanets(fetch) {
                     fetch(`planets/${i}`)
                         .then((res) => {
                             performance.mark(`fetchEnd-planets/${i}`);
+                            performance.measure(`planets/${i}`, `fetchStart-planets/${i}`, `fetchEnd-planets/${i}`);
                             return res;
                         })
                 );
@@ -175,19 +176,18 @@ function bench(testSet) {
     return testSet()
         .then(() => {
             performance.mark("overall-end");
-
-            const marks = window.performance.getEntries().filter((entry) => entry.entryType === "mark");
-
-            console.table(marks);
-
             performance.measure("overall", "overall-start", "overall-end");
-            console.log("done: ", marks[marks.length - 1].startTime - marks[0].startTime);
+            
+            console.table(window.performance.getEntriesByType('measure'));
+
+            console.log("done: ", window.performance.getEntriesByType("measure")[0].duration);
             window.benchDone = true;
             document.body.style.background = "green";
 
             return {
-                marks,
-                duration: marks[marks.length - 1].startTime - marks[0].startTime
+                measures: window.performance.getEntriesByType("measure"),
+                duration: window.performance.getEntriesByType("measure")[0].duration,
+                resources: window.performance.getEntriesByType("resource")
             };
         })
         .catch((err) => console.error(err, err.stack));

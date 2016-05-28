@@ -47,8 +47,6 @@ sudo tcpdump -G 10 -W 1 -w results.pcap -i eth0 -s 0 -q '(tcp port 3001)'
 
 scp -P 22222 -i ~/.ssh/id_rsa.pub application@192.168.99.100:/home/application/results.pcap ~/results.pcap
   
-
-
 ## Wireshark
 
 
@@ -62,7 +60,46 @@ sudo chgrp application /usr/bin/dumpcap
 tshark -i eth0 -o "ssl.keys_list: any,3001,http,/home/application/localhost.key" -f "tcp port 3001" -F pcap
 
 
+## h1
+
+88 packets captured
 
 
+## h2
+
+61 packets captured
+
+
+## ws
+
+98 packets captured
+
+h1 { 
+  total: 32105,
+  length: 88,
+  mean: 364.82954545454544,
+  median: 350,
+  min: 0,
+  max: 832 }
+h2 { 
+  total: 28963,
+  length: 61,
+  mean: 474.8032786885246,
+  median: 66,
+  min: 0,
+  max: 2896 }
+ws {
+  total: 18656,
+  length: 114,
+  mean: 163.64912280701753,
+  median: 46,
+  min: 0,
+  max: 2389 }
+
+
+
+## [Capinfos](https://www.wireshark.org/docs/man-pages/capinfos.html)
+
+capinfos -z results/simulation/multiple-small/traffic_10.pcap
 
 

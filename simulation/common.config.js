@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 exports.networkConnections = {
     ///*
     "2G": {
@@ -33,3 +35,5 @@ exports.hosts = {
     h1: "https://192.168.99.100:3001",
     h2: "https://192.168.99.100:3002"
 };
+
+exports.resultsDir = path.resolve(__dirname, "../results/simulation");

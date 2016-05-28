@@ -1,11 +1,12 @@
 "use strict";
 
+const fs = require("fs");
 const webdriver = require("selenium-webdriver");
 
 const sequence = require("when/sequence");
 const guard = require("when/guard");
 
-const { NetworkLimiter } = require("./helpers");
+const { NetworkLimiter, TrafficSniffer } = require("./helpers");
 
 const limiter = new NetworkLimiter();
 
@@ -21,12 +22,22 @@ function getDriver(browser = "chrome") {
     return driver;
 }
 
-function runSimulation(conditions, runner) {
+let count = 0;
+
+function runSimulation(conditions, runner, resultDir) {
     const sets = conditions.map(condition => {
 
         return function run() {
             const driver = getDriver(condition.browser);
-
+            let sniffer; 
+            let trafficFile = false;
+            
+            if(condition.sniffPort) {
+                trafficFile = resultDir + "/traffic_" + count++ + ".pcap";
+                sniffer = new TrafficSniffer();
+                sniffer.start(condition.sniffPort, trafficFile);    
+            }
+            
             console.log("running", condition);
 
             return limiter.throttle(condition.latency || false)
@@ -34,9 +45,15 @@ function runSimulation(conditions, runner) {
                 .then((result) => {
                     return driver.quit()
                         .then(() => {
-                            return {
-                                condition, result
+                            if(sniffer) {
+                                sniffer.stop();       
                             }
+                         
+                            return {
+                                condition, 
+                                result,
+                                trafficFile
+                            };
                         });
                 });
         }
@@ -47,7 +64,7 @@ function runSimulation(conditions, runner) {
 
 const run = guard(guard.n(1), runSimulation);
 
-function runGroup(conditions, runner) {
+function runGroup(conditions, runner, resultDir) {
     if (Array.isArray(conditions)) {
         conditions = {
             "default": conditions
@@ -58,13 +75,17 @@ function runGroup(conditions, runner) {
         Object
             .keys(conditions)
             .map(conditionName => {
-               return run(conditions[conditionName], runner)
+               return run(conditions[conditionName], runner, resultDir)
                    .then(result => {
-                       return {
+                       result = {
                            name: conditionName,
                            result
                        };
-                   });
+
+                       fs.writeFileSync(resultDir + "/results.json", JSON.stringify(result));
+
+                       return result;
+                   })
             })
     )
         .then((results) => {

@@ -1,25 +1,28 @@
 "use strict";
 
-const { hosts } = require("../common.config.js");
+const { hosts, resultsDir } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
 const { chartTemplates } = require("../../helpers");
-const sortBy = require("sort-by");
-
 const runSimulation = require("../simulation");
+
+const resultDir = `${resultsDir}/multiple-small`;
 
 const conditions = {
     "transports": [
         {
             transport: "h1",
-            url: hosts.h1
+            url: hosts.h1,
+            sniffPort: 3001
         },
         {
             transport: "h2",
-            url: hosts.h2
+            url: hosts.h2,
+            sniffPort: 3002
         },
         {
             transport: "ws",
-            url: hosts.h1
+            url: hosts.h1,
+            sniffPort: 3001
         }
     ]
 };
@@ -47,7 +50,6 @@ function runner(driver, config) {
     return driver.executeAsyncScript(clientScript, config);
 }
 
-
 function analyze(res) {
     let results = res.transports;
 
@@ -59,17 +61,18 @@ function analyze(res) {
             return result;
         });
 
-    chartTemplates.transportDuration("Multiple Small Requests",  __dirname + "/Multiple-Small.pdf", results);
+    chartTemplates.transportDuration("Multiple Small Requests", `${resultDir}/duration.pdf`, results);
 }
 
 function run() {
-    runSimulation(conditions, runner)
+    runSimulation(conditions, runner, resultDir)
         .then((res) => {
-            saveResults("multipleSmallRequests", res);
-
             analyze(res);
         });
 }
+
+exports.run = run;
+exports.analyze = analyze;
 
 run();
 

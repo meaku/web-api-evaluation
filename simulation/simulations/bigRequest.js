@@ -1,11 +1,11 @@
 "use strict";
 
-const { hosts } = require("../common.config.js");
+const { hosts, resultsDir } = require("../common.config.js");
 const { addNetworkingVariations, saveResults } = require("../helpers");
-const { networks, toChartSeries, chart } = require("../../helpers");
-const sortBy = require("sort-by");
-
+const { chartTemplates } = require("../../helpers");
 const runSimulation = require("../simulation");
+
+const resultDir = `${resultsDir}/big-request`;
 
 const conditions = {
     "transports": [
@@ -72,67 +72,15 @@ function analyze(res) {
             return result;
         });
 
-    results.forEach(transport => {
-        console.log(transport.transport, transport.condition.connectionName, transport.result.duration);
-    });
-
-    const series = toChartSeries(
-        results,
-        "transport",
-        "duration",
-        {
-            h1: "HTTP/1.1",
-            h2: "HTTP/2",
-            ws: "Websocket"
-        }
-    );
-
-    chart({
-        chart: {
-            type: "column",
-            renderTo: "container",
-            forExport: true,
-            width: 600,
-            height: 400
-        },
-        title: {
-            text: "Big Request"
-        },
-        xAxis: {
-            categories: networks
-        },
-        yAxis: {
-            //allowDecimals: false,
-            title: {
-                text: "Load Time"
-            }
-        },
-        plotOptions: {
-            series: {
-                dataLabels: {
-                    shape: "callout",
-                    backgroundColor: "rgba(0, 0, 0, 0.75)",
-                    style: {
-                        color: "#FFFFFF",
-                        textShadow: "none"
-                    }
-                }
-            }
-        },
-        series
-    }, __dirname + "/Big-Request.pdf");
+    chartTemplates.transportDuration("Big File", `${resultDir}/duration.pdf`, results);
 }
 
 function run() {
-    runSimulation(conditions, runner)
+    runSimulation(conditions, runner, resultDir)
         .then((res) => {
-            saveResults("bigRequest", res);
-
             analyze(res);
         });
 }
 
 run();
-
-//analyze(require("../../results/bigRequest.json"));
 

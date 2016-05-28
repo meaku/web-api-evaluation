@@ -1,12 +1,11 @@
 "use strict";
 
-const { hosts } = require("../common.config.js");
-const { addNetworkingVariations, saveResults } = require("../helpers");
-const sortBy = require("sort-by");
-
+const { hosts, resultsDir } = require("../common.config.js");
+const { addNetworkingVariations } = require("../helpers");
 const { chartTemplates } = require("../../helpers");
-
 const runSimulation = require("../simulation");
+
+const resultDir = `${resultsDir}/rush-hour-4`;
 
 const conditions = {
     "transports": [
@@ -28,10 +27,10 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
-    fetch("/delay/10000?blab=1");
-    fetch("/delay/10000?blib=2");
+    fetch("/delay/10000?blib=1");
+    fetch("/delay/10000?blab=2");
     fetch("/delay/10000?blab=3");
-    fetch("/delay/10000?blib=4");
+    fetch("/delay/10000?blab=4");
 
     start(config.transport).then(res => {
 
@@ -64,21 +63,15 @@ function analyze(res) {
             return result;
         });
 
-    chartTemplates.transportDuration("Rush Hour (4 Lanes blocked)",  __dirname + "/rushHour4.pdf", results);
+    chartTemplates.transportDuration("Rush Hour (4 Lanes blocked)", `${resultDir}/duration.pdf`, results);
 }
 
 function run() {
-    runSimulation(conditions, runner)
+    runSimulation(conditions, runner, resultDir)
         .then((res) => {
-            saveResults("rushHour", res);
-
             analyze(res);
         });
 }
-
-//const results = require("../../results/rushHour-4.json");
-
-//analyze(results);
 
 run();
 
