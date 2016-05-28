@@ -29,15 +29,15 @@ function runSimulation(conditions, runner, resultDir) {
 
         return function run() {
             const driver = getDriver(condition.browser);
-            let sniffer; 
+            let sniffer;
             let trafficFile = false;
-            
-            if(condition.sniffPort) {
+
+            if (condition.sniffPort) {
                 trafficFile = resultDir + "/traffic_" + count++ + ".pcap";
                 sniffer = new TrafficSniffer();
-                sniffer.start(condition.sniffPort, trafficFile);    
+                sniffer.start(condition.sniffPort, trafficFile);
             }
-            
+
             console.log("running", condition);
 
             return limiter.throttle(condition.latency || false)
@@ -45,12 +45,12 @@ function runSimulation(conditions, runner, resultDir) {
                 .then((result) => {
                     return driver.quit()
                         .then(() => {
-                            if(sniffer) {
-                                sniffer.stop();       
+                            if (sniffer) {
+                                sniffer.stop();
                             }
-                         
+
                             return {
-                                condition, 
+                                condition,
                                 result,
                                 trafficFile
                             };
@@ -75,17 +75,13 @@ function runGroup(conditions, runner, resultDir) {
         Object
             .keys(conditions)
             .map(conditionName => {
-               return run(conditions[conditionName], runner, resultDir)
-                   .then(result => {
-                       result = {
-                           name: conditionName,
-                           result
-                       };
-
-                       fs.writeFileSync(resultDir + "/results.json", JSON.stringify(result));
-
-                       return result;
-                   })
+                return run(conditions[conditionName], runner, resultDir)
+                    .then(result => {
+                        return {
+                            name: conditionName,
+                            result
+                        };
+                    })
             })
     )
         .then((results) => {
@@ -96,6 +92,7 @@ function runGroup(conditions, runner, resultDir) {
                 res[result.name] = result.result;
             });
 
+            fs.writeFileSync(resultDir + "/results.json", JSON.stringify(res));
             return res;
         });
 }
