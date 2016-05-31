@@ -12,6 +12,10 @@ class Resource {
     readCollection() {
         return Promise.resolve(this.data);
     }
+    
+    readCollectionStream() {
+        return this.data.map(d => JSON.stringify(d)).join("\n");
+    }
 
     read(id) {
         if(!this.data[id]) {

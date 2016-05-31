@@ -48,6 +48,7 @@ app.get("/file/:name", function (req, res, next) {
         }
     });
 });
+
 app.get("/delay/:delay", (req, res) => {
    setTimeout(() => res.json({}), req.params.delay);
 });
@@ -81,6 +82,11 @@ app.get("/streamed-polling", (req, res) => {
     eventStream.on("data", (data) => {
         res.write(JSON.stringify(data));
     });
+});
+
+app.get("/stream/:resource", (req, res) => {
+    let resource = resources[req.params.resource];
+    res.send(resource.readCollectionStream());
 });
 
 app.get("/:resource/:id?", (req, res) => {
