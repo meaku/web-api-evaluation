@@ -29,6 +29,10 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
+    if(config.transport === "WebSocket") {
+        config.transport = "ws";
+    }
+
     start(config.transport, "chunks").then(res => {
 
         //append some more data
@@ -96,6 +100,6 @@ function run() {
 exports.run = run;
 exports.analyze = analyze;
 
-//run();
-analyze(require(`${resultDir}/results.json`));
+run();
+//analyze(require(`${resultDir}/results.json`));
 

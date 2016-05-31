@@ -292,7 +292,7 @@ window.start = function (transport, type) {
         }
     }
 
-    if (transport === "ws") {
+    if (transport === "WebSocket") {
         const ws = new WS(`wss://${window.location.hostname}:${window.location.port}`);
         benchInstance = ws.connected.then(() => {
             return bench(() => forType(type, ws.fetch.bind(ws)));
