@@ -4,9 +4,11 @@
   "description": "various web api evaluations",
   "main": "index.js",
   "scripts": {
-    "start": "npm-run-all --parallel startH1 startH2",
+    "start": "npm-run-all --parallel startH1 startH2 start2ndH1 start2ndH2",
     "startH2": "node ./server.js",
-    "startH1": "node ./server.js --port 3001 --httpVersion http1.1"
+    "startH1": "node ./server.js --port 3001 --httpVersion http1.1",
+    "start2ndH1": "node ./server.js --port 3011 --httpVersion http1.1",
+    "start2ndH2": "node ./server.js --port 3022"
   },
   "repository": {
     "type": "git",

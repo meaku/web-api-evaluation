@@ -8,11 +8,11 @@ function conjestLane(duration) {
 
 function rushHour(lanes, duration) {
     const promises = [];
-    
-    for(let i = 0; i <= lanes; i++) {
+
+    for (let i = 0; i <= lanes; i++) {
         promises.push(conjestLane(duration));
     }
-    
+
     return fetch(`/planets/1`)
         .then(() => console.log("done"));
 }
@@ -25,7 +25,7 @@ function streamedFetch() {
         function pump() {
             return reader
                 .read()
-                .then(({done, value}) => {
+                .then(({ done, value }) => {
                     if (done) {
                         return
                     }
@@ -34,7 +34,8 @@ function streamedFetch() {
                     console.log(`received ${value.byteLength} bytes (${total} bytes in total)`);
                     return pump();
                 })
-        }}
+        }
+    }
 
     fetch("/planets")
         .then(res => consume(res.body.getReader()))
@@ -52,7 +53,7 @@ function streamedPollingFetch() {
         function pump() {
             return reader
                 .read()
-                .then(({done, value}) => {
+                .then(({ done, value }) => {
                     if (done) {
                         return
                     }
@@ -61,7 +62,8 @@ function streamedPollingFetch() {
                     console.log(`received ${value.byteLength} bytes (${total} bytes in total)`);
                     return pump();
                 })
-        }}
+        }
+    }
 
     fetch("/streamed-polling")
         .then(res => consume(res.body.getReader()))
@@ -76,9 +78,9 @@ function streamedPolling() {
     xhr.open("GET", "/streamed-polling");
     xhr.seenBytes = 0;
 
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
         console.log(xhr.readyState);
-        if(xhr.readyState > 2) {
+        if (xhr.readyState > 2) {
             var newData = xhr.responseText.substr(xhr.seenBytes);
             // process newData
             console.log("newData", newData);
@@ -87,7 +89,7 @@ function streamedPolling() {
         }
     };
 
-    xhr.onloadend = function() {
+    xhr.onloadend = function () {
         console.log("done");
         //finished
     };
@@ -177,10 +179,12 @@ function bench(testSet) {
         .then(() => {
             performance.mark("overall-end");
             performance.measure("overall", "overall-start", "overall-end");
+            performance.measure("overall-from-start", "navigationStart", "overall-end");
 
-            console.table(window.performance.getEntriesByType("measure"));
+            const measures = window.performance.getEntriesByType("measure");
 
-            console.log("done: ", window.performance.getEntriesByType("measure")[0].duration);
+            console.table(measures);
+
             window.benchDone = true;
             document.body.style.background = "green";
 
@@ -189,22 +193,23 @@ function bench(testSet) {
             console.table(requests);
 
             return {
-                measures: window.performance.getEntriesByType("measure"),
-                duration: window.performance.getEntriesByType("measure")[0].duration,
+                measures: measures,
+                duration: measures[0].duration,
+                durationFromStart: measures.find(m => m.name === "overall-from-start").duration,
                 resources: window.performance.getEntriesByType("resource")
             };
         })
         .catch((err) => console.error(err, err.stack));
 }
 
-window.sse = function() {
+window.sse = function () {
     var es = new EventSource("/sse");
 
-    es.onopen = function() {
+    es.onopen = function () {
         console.log("sse connection to /see established");
     };
 
-    es.onerror = function(err) {
+    es.onerror = function (err) {
         console.error("An error occurred: " + err.message);
     };
 
@@ -218,46 +223,40 @@ window.sse = function() {
     });
 };
 
-window.start = function (transport) {
+
+function loadPlanetsSingleRequest(fetch) {
+    return fetch("/planets");
+}
+
+
+const fetchJSON = (url) => {
+    return fetch(url)
+        .then(res => res.json());
+};
+
+window.start = function (transport, type) {
+    type = type || "chunks";
     let benchInstance;
+
+    function forType(type, fetch) {
+        if (type === "chunks") {
+            return loadPlanets(fetch);
+        }
+        else {
+            return loadPlanetsSingleRequest(fetch);
+        }
+    }
 
     if (transport === "ws") {
         const ws = new WS(`wss://${window.location.hostname}:${window.location.port}`);
         benchInstance = ws.connected.then(() => {
-            return bench(() => loadPlanets(ws.fetch.bind(ws)));
+            return bench(() => forType(type, ws.fetch.bind(ws)));
         });
     }
     else {
-        benchInstance = bench(() => loadPlanets((url) => {
-            return fetch(url)
-                .then((res) => res.json());
-        }))
+        benchInstance = bench(() => forType(type, fetchJSON))
     }
 
     return benchInstance;
 };
 
-window.bigFile = function() {
-    performance.mark(`bigFile-start`);
-
-    return fetch("/file/big.json")
-        .then(res => {
-            //Only the stream is readable!
-            performance.mark("bigFile-received");
-            return res.json()
-        })
-        .then(() => {
-            performance.mark("bigFile-decoded");
-            performance.mark("bigFile-end");
-
-            const marks = window.performance.getEntries().filter((entry) => entry.entryType === "mark");
-            console.table(marks);
-
-            window.benchDone = true;
-            document.body.style.background = "green";
-
-            return {
-                duration: marks[marks.length - 1].startTime - marks[0].startTime
-            };
-        })
-};
