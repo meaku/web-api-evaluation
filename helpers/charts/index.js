@@ -31,6 +31,7 @@ function chart(chartConfig, filePath) {
 
     const svg = win.document.getElementById("container").childNodes[0].innerHTML;
 
+    console.log("Writing:" + filePath);
     //send the svg to the export service and save result as pdf
     request.post({
         url: "http://export.highcharts.com/",

@@ -12,7 +12,7 @@ exports.chartDataByNetwork = function (results, valueKey = "duration") {
 
     return networks.map(network => {
         const data = results
-            .filter(result => result.connectionName === network)
+            .filter(result => result.network === network)
             .map(entry => entry.result[valueKey]);
 
         return [network, ...data];
@@ -58,7 +58,7 @@ function sortByOrder(order) {
     }
 }
 
-exports.toChartSeries = function (results, name, data = "duration", names, sortEntries) {
+exports.toChartSeries = function (results, name, data = "duration", names) {
     return Object.keys(names).map(n => {
 
         const entries = results

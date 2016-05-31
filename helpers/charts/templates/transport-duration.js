@@ -8,11 +8,13 @@ module.exports = function(title, fileName, data) {
         "transport",
         "duration",
         {
-            h1: "HTTP/1.1",
-            h2: "HTTP/2",
-            ws: "Websocket"
+            "HTTP/1.1": "HTTP/1.1",
+            "HTTP/2": "HTTP/2",
+            "WebSocket": "Websocket"
         }
     );
+
+    console.log(series);
 
     return chart({
         chart: {

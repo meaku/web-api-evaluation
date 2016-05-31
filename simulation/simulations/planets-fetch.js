@@ -2,9 +2,9 @@
 
 const { hosts, resultsDir } = require("../common.config.js");
 const { addNetworkingVariations,  } = require("../helpers");
-const { chartTemplates } = require("../../helpers");
+const { LatexTable, chartTemplates } = require("../../helpers");
 const runSimulation = require("../simulation");
-const resultDir = `${resultsDir}/multiple-small`;
+const resultDir = `${resultsDir}/planets-fetch`;
 
 const conditions = {
     "transports": [
@@ -20,8 +20,8 @@ const conditions = {
         },
         {
             transport: "WebSocket",
-            url: hosts.h1,
-            sniffPort: 3001
+            url: hosts.h2,
+            sniffPort: 3002
         }
     ]
 };
@@ -29,7 +29,7 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
-    start(config.transport).then(res => {
+    start(config.transport, "chunks").then(res => {
 
         //append some more data
         res.requests = window.performance.getEntries();
@@ -55,16 +55,34 @@ function analyze(res) {
     results = results
         .map(result => {
             result.duration = result.result.duration;
-            result.durationFromStart = result.result.overallFromStart;
+            result.durationFromStart = result.result.durationFromStart;
             return result;
         });
 
-    
-    results.forEach((r) => {
-        console.log(`${r.transport}  ${r.connectionName} ${r.duration} ${r.pcap.numberOfPackets} ${r.pcap.dataSize} ${r.pcap.averagePacketSize} ${r.pcap.captureDuration}`)
+
+    const tbl = new LatexTable({
+        head: ["Transport", "Network", "Duration", "Number of packets", "Data size", "Average packet size"],
+        caption: "TCP Traffic: Planets Chunked Requests",
+        label: "tcp-planets-chunked-requests"
     });
 
-    chartTemplates.transportDuration("Multiple Small Requests", `${resultDir}/duration.pdf`, results);
+    results.forEach((r) => {
+        tbl.push([r.transport, r.network, r.duration,  r.pcap.numberOfPackets, r.pcap.dataSize, r.pcap.averagePacketSize]);
+        //console.log(`${r.transport}  ${r.network} ${r.duration} ${r.pcap.numberOfPackets} ${r.pcap.dataSize} ${r.pcap.averagePacketSize} ${r.pcap.captureDuration}`)
+        console.log(`${r.transport}  ${r.network} ${r.duration} ${r.durationFromStart} ${r.pcap.numberOfPackets} ${r.pcap.dataSize}`)
+    });
+
+
+
+    chartTemplates.transportDuration("Planets Fetch", `${resultDir}/duration.pdf`, results);
+    /*
+    chartTemplates.transportDuration("Planets: Fetch (From Start)", `${resultDir}/duration-from-start.pdf`, results.map(res => {
+        res.duration = res.durationFromStart;
+        return res;
+    }));
+    */
+
+    console.log(tbl.toLatex());
 }
 
 function run() {
@@ -78,6 +96,6 @@ function run() {
 exports.run = run;
 exports.analyze = analyze;
 
-run();
-//analyze(require(`${resultDir}/results.json`));
+//run();
+analyze(require(`${resultDir}/results.json`));
 

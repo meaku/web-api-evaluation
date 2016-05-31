@@ -147,7 +147,6 @@ class WS {
 }
 
 function loadPlanets(fetch) {
-    console.log("loadPlanets", fetch);
     let requests = [];
 
     for (let i = 1; i <= 60; i++) {
@@ -172,6 +171,50 @@ function loadPlanets(fetch) {
     return Promise.all(requests);
 }
 
+function loadPlanetsSharded(fetch) {
+    let i = 0;
+    let urls = [];
+    let requests = [];
+    const hostname = window.location.hostname;
+
+    if(window.location.host.indexOf("3002") !== -1) {
+        urls = [
+            `https://${hostname}:3002`,
+            `https://${hostname}:3022`
+        ];
+    }
+    else {
+        urls = [
+            `https://${hostname}:3001`,
+            `https://${hostname}:3011`
+        ]
+    }
+
+    for (let i = 1; i <= 60; i++) {
+        requests.push(`${urls[i % 2]}/planets/${i}`);
+    }
+
+    return Promise.all(
+        requests.map(r => {
+            console.log(r);
+
+            return new Promise((resolve) => {
+                performance.mark(`fetchStart-${r}`);
+
+                resolve(
+                    fetch(r)
+                        .then((res) => {
+                            performance.mark(`fetchEnd-${r}`);
+                            performance.measure(`planets/${i}`, `fetchStart-${r}`, `fetchEnd-${r}`);
+                            return res;
+                        })
+                );
+
+            })
+        })
+    );
+}
+
 function bench(testSet) {
     performance.mark("overall-start");
 
@@ -194,7 +237,7 @@ function bench(testSet) {
 
             return {
                 measures: measures,
-                duration: measures[0].duration,
+                duration: measures.find(m => m.name === "overall").duration,
                 durationFromStart: measures.find(m => m.name === "overall-from-start").duration,
                 resources: window.performance.getEntriesByType("resource")
             };
@@ -228,7 +271,6 @@ function loadPlanetsSingleRequest(fetch) {
     return fetch("/planets");
 }
 
-
 const fetchJSON = (url) => {
     return fetch(url)
         .then(res => res.json());
@@ -241,6 +283,9 @@ window.start = function (transport, type) {
     function forType(type, fetch) {
         if (type === "chunks") {
             return loadPlanets(fetch);
+        }
+        else if(type === "sharded") {
+            return loadPlanetsSharded(fetch);
         }
         else {
             return loadPlanetsSingleRequest(fetch);
