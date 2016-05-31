@@ -1,26 +1,25 @@
 "use strict";
 
 const { hosts, resultsDir } = require("../common.config.js");
-const { addNetworkingVariations, saveResults } = require("../helpers");
+const { addNetworkingVariations,  } = require("../helpers");
 const { chartTemplates } = require("../../helpers");
 const runSimulation = require("../simulation");
-
 const resultDir = `${resultsDir}/multiple-small`;
 
 const conditions = {
     "transports": [
         {
-            transport: "h1",
+            transport: "HTTP/1.1",
             url: hosts.h1,
             sniffPort: 3001
         },
         {
-            transport: "h2",
+            transport: "HTTP/2",
             url: hosts.h2,
             sniffPort: 3002
         },
         {
-            transport: "ws",
+            transport: "WebSocket",
             url: hosts.h1,
             sniffPort: 3001
         }
@@ -55,11 +54,15 @@ function analyze(res) {
 
     results = results
         .map(result => {
-            result.connectionName = result.condition.connectionName;
-            result.transport = result.condition.transport;
             result.duration = result.result.duration;
+            result.durationFromStart = result.result.overallFromStart;
             return result;
         });
+
+    
+    results.forEach((r) => {
+        console.log(`${r.transport}  ${r.connectionName} ${r.duration} ${r.pcap.numberOfPackets} ${r.pcap.dataSize} ${r.pcap.averagePacketSize} ${r.pcap.captureDuration}`)
+    });
 
     chartTemplates.transportDuration("Multiple Small Requests", `${resultDir}/duration.pdf`, results);
 }
@@ -68,11 +71,13 @@ function run() {
     runSimulation(conditions, runner, resultDir)
         .then((res) => {
             analyze(res);
-        });
+        })
+        .catch(err => console.error(err.message, err.stack));
 }
 
 exports.run = run;
 exports.analyze = analyze;
 
 run();
+//analyze(require(`${resultDir}/results.json`));
 

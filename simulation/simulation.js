@@ -6,7 +6,13 @@ const webdriver = require("selenium-webdriver");
 const sequence = require("when/sequence");
 const guard = require("when/guard");
 
-const { NetworkLimiter, TrafficSniffer } = require("./helpers");
+const { NetworkLimiter, TrafficSniffer, pcap } = require("./helpers");
+
+function delay(duration, args) {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(args), duration);
+    });
+}
 
 const limiter = new NetworkLimiter();
 
@@ -29,30 +35,48 @@ function runSimulation(conditions, runner, resultDir) {
 
         return function run() {
             const driver = getDriver(condition.browser);
-            let sniffer;
+            let sniffer = new TrafficSniffer();
             let trafficFile = false;
 
             if (condition.sniffPort) {
                 trafficFile = resultDir + "/traffic_" + count++ + ".pcap";
-                sniffer = new TrafficSniffer();
-                sniffer.start(condition.sniffPort, trafficFile);
+                // sniffer.start(condition.sniffPort, trafficFile);
             }
 
-            console.log("running", condition);
-
-            return limiter.throttle(condition.latency || false)
+            return sniffer.start(condition.sniffPort || false, trafficFile)
+                .then(() => limiter.throttle(condition.latency || false))
+                .then(() => delay(2000)) //ensure sniffer is running
+                .then(() => console.log("run", condition))
                 .then(() => runner(driver, condition))
+                //.then((result) => delay(2000, result))
                 .then((result) => {
+
                     return driver.quit()
                         .then(() => {
                             if (sniffer) {
-                                sniffer.stop();
+                                return sniffer.stop()
+                                    .then(() => delay(200))
+                                    //.then(() => console.log("next!"))
+                                    .then(() => pcap(trafficFile))
+                                    .then(pcap => {
+                                        return {
+                                            network: condition.network,
+                                            transport: condition.transport,
+                                            condition,
+                                            result,
+                                            trafficFile,
+                                            pcap
+                                        };
+                                    })
+                                    .catch((err) => console.error(err.message, err.stack));
                             }
 
+
                             return {
+                                network: condition.network,
+                                transport: condition.transport,
                                 condition,
-                                result,
-                                trafficFile
+                                result
                             };
                         });
                 });

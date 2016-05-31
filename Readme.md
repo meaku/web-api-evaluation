@@ -18,11 +18,10 @@ docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 -p 22222:22222 \
 
 docker build -t simulation-server .
 
-docker run --rm -ti --name=simulation-server -p 3001:3001 -p 3002:3002 \
+docker run --rm -ti --name=simulation-server -p 3001:3001 -p 3002:3002 -p 3011:3011 -p 3022:3022 \
         simulation-server 
 
 - reachable via docker-machine ip:<port> (3002) 
-
 
 ## [Throttle network](http://mark.koli.ch/slowdown-throttle-bandwidth-linux-network-interface)
 

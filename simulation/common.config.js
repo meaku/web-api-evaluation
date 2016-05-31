@@ -2,7 +2,7 @@
 
 const path = require("path");
 
-exports.networkConnections = {
+exports.defaultNetworks = {
     ///*
     "2G": {
         latency: "650ms",

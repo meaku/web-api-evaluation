@@ -3,12 +3,12 @@
 const ss = require("simple-statistics");
 
 exports.htmlTable = require("./htmlTable");
-exports.latexTable = require("./latexTable");
+exports.LatexTable = require("./latexTable");
 exports.chart = require("./charts");
-exports.networks = ["2G", "3G", "4G", "DSL", "Cable", "Fiber"];
+exports.networks = ["2G", "3G", "4G", "DSL", "Cable", "Fibre"];
 
 exports.chartDataByNetwork = function (results, valueKey = "duration") {
-    const networks = ["2G", "3G", "4G", "DSL", "Cable", "Fiber"];
+    const networks = ["2G", "3G", "4G", "DSL", "Cable", "Fibre"];
 
     return networks.map(network => {
         const data = results
