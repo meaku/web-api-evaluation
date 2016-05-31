@@ -4,8 +4,8 @@ const { hosts, resultsDir } = require("../common.config.js");
 const { addNetworkingVariations, loadScript, analyzer } = require("../helpers");
 const { LatexTable, chartTemplates } = require("../../helpers");
 
-const resultDir = `${resultsDir}/planets-fetch`;
-const script = loadScript("planets");
+const resultDir = `${resultsDir}/big-request`;
+const script = loadScript("bigRequest");
 
 const conditions = {
     "transports": [
@@ -30,8 +30,10 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
-    start(config.transport, "chunks").then(res => {
-        res.requests = window.performance.getEntries();
+    start(config.transport, "files/1").then(res => {
+        res.resources = window.performance.getEntriesByType("resource");
+        res.marks = window.performance.getEntriesByType("mark");
+        res.measures = window.performance.getEntriesByType("measure");
         res.timing = window.performance.timing;
 
         callback(res);
@@ -51,8 +53,8 @@ function analyze(res) {
             result.durationFromStart = result.result.durationFromStart;
             return result;
         });
-    
-    analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch");
+
+    analyzer.duration(results, resultDir, "TCP Traffic: Big Request", "tcp-big-request", "Big Request");
 }
 
 module.exports = {
