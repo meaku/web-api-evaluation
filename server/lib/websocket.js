@@ -15,18 +15,16 @@ module.exports = function init(server, resources) {
 
         ws.on("message", function incoming(message) {
             message = JSON.parse(message);
-            
-            //const type = message.type;
-            const requestId = message.requestId;
-            const url = message.payload.url;
-            let type, id;
 
+            const requestId = message.requestId;
+            let url = message.payload.url;
+
+            //append trailing slash
             if(url.indexOf("/") === -1) {
-                [type, id] = [url, null];
+                url += "/";
             }
-            else {
-                [type, id] = url.split("/");
-            }
+
+            const [type, id] = url.split("/");
 
             if (!type || !resources[type]) {
                 send({ error: "resource not found" });
@@ -37,7 +35,12 @@ module.exports = function init(server, resources) {
 
             if (!id) {
                 resource.readCollection()
-                    .then(send)
+                    .then((payload) => {
+                        send({
+                            requestId,
+                            payload
+                        })
+                    })
                     .catch((err) => console.error(err));
 
                 return;
