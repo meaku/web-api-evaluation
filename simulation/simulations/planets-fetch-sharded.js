@@ -1,10 +1,11 @@
 "use strict";
 
 const { hosts, resultsDir } = require("../common.config.js");
-const { addNetworkingVariations,  } = require("../helpers");
+const { addNetworkingVariations, loadScript, analyzer } = require("../helpers");
 const { LatexTable, chartTemplates } = require("../../helpers");
-const runSimulation = require("../simulation");
+
 const resultDir = `${resultsDir}/planets-fetch-sharded`;
+const script = loadScript("planets");
 
 const conditions = {
     "transports": [
@@ -17,6 +18,11 @@ const conditions = {
             transport: "HTTP/2",
             url: hosts.h2,
             sniffPort: 3002
+        },
+        {
+            transport: "WebSocket",
+            url: hosts.h2,
+            sniffPort: 3002
         }
     ]
 };
@@ -24,9 +30,7 @@ const conditions = {
 addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
-    start(config.transport, "sharded").then(res => {
-
-        //append some more data
+    start(config.transport, "chunks").then(res => {
         res.requests = window.performance.getEntries();
         res.timing = window.performance.timing;
 
@@ -35,12 +39,6 @@ function clientScript(config, callback) {
 }
 
 function runner(driver, config) {
-    if (!config) {
-        return Promise.reject(new Error("Missing config"));
-    }
-
-    driver.get(config.url);
-    driver.manage().timeouts().setScriptTimeout(100000);
     return driver.executeAsyncScript(clientScript, config);
 }
 
@@ -54,43 +52,13 @@ function analyze(res) {
             return result;
         });
 
-
-    const tbl = new LatexTable({
-        head: ["Transport", "Network", "Duration", "Number of packets", "Data size", "Average packet size"],
-        caption: "TCP Traffic: Planets Chunked Requests",
-        label: "tcp-planets-chunked-requests"
-    });
-
-    results.forEach((r) => {
-        tbl.push([r.transport, r.network, r.duration,  r.pcap.numberOfPackets, r.pcap.dataSize, r.pcap.averagePacketSize]);
-        //console.log(`${r.transport}  ${r.network} ${r.duration} ${r.pcap.numberOfPackets} ${r.pcap.dataSize} ${r.pcap.averagePacketSize} ${r.pcap.captureDuration}`)
-        console.log(`${r.transport}  ${r.network} ${r.duration} ${r.durationFromStart} ${r.pcap.numberOfPackets} ${r.pcap.dataSize}`)
-    });
-
-
-
-    chartTemplates.transportDuration("Planets Fetch Sharded", `${resultDir}/duration.pdf`, results);
-    /*
-     chartTemplates.transportDuration("Planets: Fetch (From Start)", `${resultDir}/duration-from-start.pdf`, results.map(res => {
-     res.duration = res.durationFromStart;
-     return res;
-     }));
-     */
-
-    console.log(tbl.toLatex());
+    analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch");
 }
 
-function run() {
-    runSimulation(conditions, runner, resultDir)
-        .then((res) => {
-            analyze(res);
-        })
-        .catch(err => console.error(err.message, err.stack));
-}
-
-exports.run = run;
-exports.analyze = analyze;
-
-run();
-//analyze(require(`${resultDir}/results.json`));
-
+module.exports = {
+    resultDir,
+    analyze,
+    conditions,
+    runner,
+    script
+};

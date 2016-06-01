@@ -31,7 +31,9 @@ addNetworkingVariations(conditions);
 
 function clientScript(config, callback) {
     start(config.transport, "chunks").then(res => {
-        res.requests = window.performance.getEntries();
+        res.requests = window.performance.getEntriesByType("resource");
+        res.measures = window.performance.getEntriesByType("measure");
+        res.marks = window.performance.getEntriesByType("mark");
         res.timing = window.performance.timing;
 
         callback(res);
@@ -50,9 +52,15 @@ function analyze(res) {
             result.duration = result.result.duration;
             result.durationFromStart = result.result.durationFromStart;
             return result;
+
+            //console.log(result.result.requests.filter(r => r.type === "measure").map((r) => JSON.stringify(r)).join(","));
+
+           
+
         });
     
-    analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch");
+    //analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch Multiple");
+    analyzer.requestDistribution(results, resultDir);
 }
 
 module.exports = {

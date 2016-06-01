@@ -3,7 +3,7 @@
 const { chart } = require("../../");
 const { inspect } = require("util");
 
-module.exports = function(title, fileName, requests, durations) {
+module.exports = function(title, fileName, categories, durations) {
     
     const chartConfig = {
         chart: {
@@ -21,12 +21,12 @@ module.exports = function(title, fileName, requests, durations) {
             title: {
                 text: "Request"
             },
-            categories: requests
+            categories: categories
         },
 
         yAxis: {
             title: {
-                text: "Time (ms)"
+                text: "Requests"
             }
         },
         legend: {
@@ -45,11 +45,7 @@ module.exports = function(title, fileName, requests, durations) {
             }
         },
 
-        series: [{
-            name: "Requests",
-            data: durations
-        }]
-
+        series: durations
     };
 
 

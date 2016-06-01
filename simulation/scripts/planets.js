@@ -49,20 +49,20 @@ function loadPlanets(fetch) {
     let requests = [];
 
     for (let i = 1; i <= 60; i++) {
+        const resource = `planets/${i}`;
         requests.push(
             new Promise((resolve) => {
 
-                performance.mark(`fetchStart-planets/${i}`);
+                performance.mark(`fetchStart-${resource}`);
 
                 resolve(
-                    fetch(`planets/${i}`)
+                    fetch(resource)
                         .then((res) => {
-                            performance.mark(`fetchEnd-planets/${i}`);
-                            performance.measure(`planets/${i}`, `fetchStart-planets/${i}`, `fetchEnd-planets/${i}`);
+                            performance.mark(`fetchEnd-${resource}`);
+                            performance.measure(`planets/${i}`, `fetchStart-${resource}`, `fetchEnd-${resource}`);
                             return res;
                         })
                 );
-
             })
         );
     }

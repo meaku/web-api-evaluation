@@ -5,7 +5,7 @@ const { addNetworkingVariations, loadScript, analyzer } = require("../helpers");
 const { LatexTable, chartTemplates } = require("../../helpers");
 
 const resultDir = `${resultsDir}/big-request`;
-const script = loadScript("bigRequest");
+const script = loadScript("requestSingleResource");
 
 const conditions = {
     "transports": [
@@ -21,8 +21,8 @@ const conditions = {
         },
         {
             transport: "WebSocket",
-            url: hosts.h2,
-            sniffPort: 3002
+            url: hosts.h1,
+            sniffPort: 3001
         }
     ]
 };

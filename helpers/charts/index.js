@@ -10,6 +10,10 @@ function chart(chartConfig, filePath) {
     const doc = jsdom.jsdom(`<!doctype html><html><body><div id="container"></div></body></html>`);
     const win = doc.defaultView;
 
+    chartConfig.chart.credits = {
+        enabled: false
+    };
+
     // Do some modifications to the jsdom document in order to get the SVG bounding boxes right.
     doc.createElementNS = require("./createElemNS")(doc);
 

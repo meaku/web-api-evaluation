@@ -43,7 +43,7 @@ function runSimulation(conditions, script, runner, resultDir) {
             const trafficFile = `${resultDir}/traffic_${count++}.pcap`;
 
             driver.get(condition.url);
-            driver.manage().timeouts().setScriptTimeout(100000);
+            driver.manage().timeouts().setScriptTimeout(1000000);
             console.log("execute script");
 
             return driver.executeScript(script)

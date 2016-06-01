@@ -13,9 +13,7 @@ module.exports = function(title, fileName, data) {
             "WebSocket": "Websocket"
         }
     );
-
-    console.log(series);
-
+    
     return chart({
         chart: {
             type: "column",

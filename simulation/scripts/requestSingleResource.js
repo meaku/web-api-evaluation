@@ -31,6 +31,7 @@ class WS {
             const requestId = resource + Date.now();
 
             self.onMessage[requestId.toString()] = function (res) {
+                console.log("resilbe", res);
                 resolve(res);
             };
 
@@ -55,11 +56,12 @@ function bench(fetch, resource) {
     return fetch(resource)
         .then(() => {
             performance.mark(`end-${resource}`);
+            performance.measure(resource, `start-${resource}`, `end-${resource}`);
 
-            const marks = window.performance.getEntries().filter((entry) => entry.entryType === "mark");
+            const measures = window.performance.getEntriesByType("measure");
 
             return {
-                duration: marks[marks.length - 1].startTime - marks[0].startTime
+                duration: measures[0].duration
             };
         });
 }
