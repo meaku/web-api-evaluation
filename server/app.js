@@ -4,9 +4,31 @@ const fs = require("fs");
 const path = require("path");
 const resources = require("./lib/resources");
 const EventStream = require("./lib/EventStream");
+const compression = require("compression");
 
 const express = require("express");
 var app = express();
+
+function shouldCompress(req, res) {
+    console.log("compress?", process.env.compression);
+
+    if (process.env.compression) {
+        // fallback to standard filter function
+        return compression.filter(req, res)
+    }
+
+    // don't compress responses with this request header
+    return false;
+}
+
+app.use(compression({filter: shouldCompress}));
+
+//app.use(compression());
+
+app.use("/configure", (req, res, next) => {
+    process.env.compression = Boolean(req.query.compression || false) || false;
+    console.log(process.env.compression);
+});
 
 app.use((req, res, next) => {
     res.header("access-control-allow-origin", "*");
@@ -50,7 +72,7 @@ app.get("/file/:name", function (req, res, next) {
 });
 
 app.get("/delay/:delay", (req, res) => {
-   setTimeout(() => res.json({}), req.params.delay);
+    setTimeout(() => res.json({}), req.params.delay);
 });
 
 app.get("/long-polling", (req, res) => {
@@ -106,7 +128,7 @@ app.get("/:resource/:id?", (req, res) => {
     }
 
     const id = req.params.id;
-    
+
     resource.read(id)
         .then((data) => res.json(data))
         .catch((err) => {

@@ -3,7 +3,10 @@
 const WebSocketServer = require("ws").Server;
 
 module.exports = function init(server, resources) {
-    const wss = new WebSocketServer({ server: server });
+    const wss = new WebSocketServer({
+        server: server,
+        perMessageDeflate: false
+    });
 
     wss.on("connection", function connection(ws) {
         function send(data) {
@@ -16,12 +19,16 @@ module.exports = function init(server, resources) {
             //const type = message.type;
             const requestId = message.requestId;
             const url = message.payload.url;
+            let type, id;
 
-            const parts = url.split("/");
-            const type = parts[0];
-            const id = parts[1];
+            if(url.indexOf("/") === -1) {
+                [type, id] = [url, null];
+            }
+            else {
+                [type, id] = url.split("/");
+            }
 
-            if (!resources[type]) {
+            if (!type || !resources[type]) {
                 send({ error: "resource not found" });
                 return;
             }
