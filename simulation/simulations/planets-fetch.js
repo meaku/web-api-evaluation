@@ -51,16 +51,18 @@ function analyze(res) {
         .map(result => {
             result.duration = result.result.duration;
             result.durationFromStart = result.result.durationFromStart;
-            return result;
+            return Object.assign(result, result.result);
+            //return result;
 
-            //console.log(result.result.requests.filter(r => r.type === "measure").map((r) => JSON.stringify(r)).join(","));
-
-           
+            //console.log(result.result.requests.filter(r => r.type === "measure").map((r) =>
+            // JSON.stringify(r)).join(","));
 
         });
-    
-    //analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch Multiple");
-    analyzer.requestDistribution(results, resultDir);
+
+    analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch Multiple");
+    //analyzer.requestDistribution(results, resultDir);
+    analyzer.trafficSize(results, resultDir + "/traffic-size.pdf", "TCP Traffic Size");
+
 }
 
 module.exports = {

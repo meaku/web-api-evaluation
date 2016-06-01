@@ -7,48 +7,46 @@ module.exports = function(title, fileName, categories, durations) {
     
     const chartConfig = {
         chart: {
-            type: "column",
-            renderTo: "container",
-            width: 600,
-            height: 400,
-            forExport: true
+            type: "bar"
         },
-
         title: {
-            text: title
+            text: "Request Distribution"
         },
         xAxis: {
-            title: {
-                text: "Request"
-            },
-            categories: categories
+            categories: ["2G", "3G", "4G"]
         },
-
         yAxis: {
+            min: 0,
             title: {
-                text: "Requests"
+                text: "Percent"
             }
         },
-        legend: {
-            enabled: false
+        legend:{
+            reversed: true
         },
         plotOptions: {
             series: {
-                dataLabels: {
-                    shape: "callout",
-                    backgroundColor: "rgba(0, 0, 0, 0.75)",
-                    style: {
-                        color: "#FFFFFF",
-                        textShadow: "none"
-                    }
-                }
+                stacking: "percent"
+            },
+            column: {
+                //stacking: "normal"
             }
         },
-
-        series: durations
+        series: [
+            {
+                name: "41 - 100 %",
+                data: [0.2, 0.3, 0.80]
+            },
+            {
+                name: "21 - 40 %",
+                data: [0.4, 0.3, 0.1]
+            },
+            {
+                name: "0 - 20 %",
+                data: [0.2, 0.3, 0.1]
+            }]
     };
-
-
+    
     //console.log(inspect(chartConfig, { depth: null }));
     return chart(chartConfig, fileName);
 };

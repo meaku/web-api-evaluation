@@ -11,6 +11,10 @@ function saveRequire(path, errorMsg) {
         return require(path);
     }
     catch (err) {
+        console.log(err.message);
+        if(err.message.indexOf("Cannot find module ") === -1) {
+            throw err;
+        }
         throw new Error(errorMsg);
     }
 }
