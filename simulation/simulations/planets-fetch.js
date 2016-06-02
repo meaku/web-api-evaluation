@@ -59,9 +59,9 @@ function analyze(res) {
 
         });
 
-    analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch Multiple");
-    //analyzer.requestDistribution(results, resultDir);
-    analyzer.trafficSize(results, resultDir + "/traffic-size.pdf", "TCP Traffic Size");
+    //analyzer.duration(results, resultDir, "TCP Traffic: Planets Chunked Requests", "tcp-planets-chunked-requests", "Planets Fetch Multiple");
+    analyzer.requestDistribution(results, resultDir);
+    //analyzer.trafficSize(results, resultDir + "/traffic-size.pdf", "TCP Traffic Size");
 
 }
 

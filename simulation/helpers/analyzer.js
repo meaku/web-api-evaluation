@@ -92,57 +92,29 @@ exports.requestDistribution = function (results, resultDir) {
     //TODO sort by network
     //TODO Group by transport
 
-    console.log(results);
+    //console.log(results);
 
     transports.map(transport => {
-        let data = results
+
+        results = results
             .filter(r => r.transport === transport)
             .map((result) => {
-                return {
-                    name: result.network,
-                    data: requestDurationDistribution(result.result.measures).map(e => {
-                        return (e.count / (result.result.measures.length - 2)) * 100;
-                    })
-                };
 
+                return requestDurationDistribution(result.result.measures).map(dist => {
+                    return {
+                        network: result.network,
+                        name: dist.name,
+                        count: dist.count,
+                        percent: dist.count / result.result.measures.length
+
+                }})
             });
 
-        /*
-         [
-            [ 30, 20, 20, 30 ], //0: 0,1,2,3
-            [ 50, 20, 20, 30 ],
-            [ 70, 20, 20, 30 ],
-            [ 30, 20, 25, 25 ]
-         ],
-
-
-         [
-            [30, 50, 70, 30, 20, 10], //0:0, 0:
-            []
-         ]
-         */
-
-        // 6 * 4 => 4 rows â 6 cols
-
-        data = data
-            .map(d => d.data);
-
-        //TODO invert data
-        console.log("before", transport, data);
-
-        data.forEach((line, lineCount) => { //6
-            line.forEach((col, colCount) => { //4
-                //series[colCount][line]
-                console.log(lineCount, colCount, col);
-            });
-        });
-
-        //TODO invert data
-        console.log("after", transport, data);
+        console.log(results);
 
         transport = transport.replace("/", "-");
 
-        //chartTemplates.requestDurationDistribution("Distribution", `${resultDir}/distribution_${transport}.pdf`,
+        //chartTemplates.requestDurationDistribution("Distribution", `${resultDir}/distribution_${transport}.pdf`, [], results);
         // ["2G", "3G", "4G", "DSL", "Cable", "Fibre"], series);
     });
     

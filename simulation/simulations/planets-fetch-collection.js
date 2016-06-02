@@ -55,6 +55,7 @@ function analyze(res) {
         });
 
     analyzer.duration(results, resultDir, "Planets: Fetch Collection", "sim-duration-fetch-collection", "Planets: Fetch Collection");
+    analyzer.trafficSize(results, resultDir + "/traffic-size.pdf", "TCP Traffic Size");
 }
 
 module.exports = {
