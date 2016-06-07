@@ -25,6 +25,41 @@ exports.addNetworkingVariations = function(conditions, networks = defaultNetwork
     });
 };
 
+/**
+ * name = howMany
+ * variations = [10, 20, 30, 40, 50, 60]
+ * 
+ * @param conditions
+ * @param name
+ * @param variations
+ */
+exports.addVariation = function(conditions, name, variations) {
+    variations = variations.map(v => {
+        let res = {};
+        res[name] = v;
+        return res;
+    });
+
+    Object.keys(conditions).forEach(key => {
+        let mixed = [];
+
+        conditions[key].forEach((condition) => {
+            Object.keys(variations).forEach(name => {
+             
+                mixed.push(
+                    Object.assign(
+                        {},
+                        condition,
+                        variations[name]
+                    )
+                );
+            });
+        });
+
+        conditions[key] = mixed;
+    });
+};
+
 exports.delay = function delay(duration, args) {
     return new Promise(resolve => {
         setTimeout(() => resolve(args), duration);

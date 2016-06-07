@@ -185,4 +185,3 @@ function start(transport, type) {
 
 
 window.start = start;
-

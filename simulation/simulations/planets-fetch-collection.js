@@ -14,7 +14,6 @@ const conditions = {
             url: hosts.h1,
             sniffPort: 3001
         },
-
         {
             transport: "HTTP/2",
             url: hosts.h2,
