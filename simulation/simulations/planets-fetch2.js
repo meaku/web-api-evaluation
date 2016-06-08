@@ -11,30 +11,31 @@ const conditions = {
     "transports": [
         {
             transport: "HTTP/1.1",
-            url: hosts.h1,
-            sniffPort: 3001
+            baseUrl: hosts.h1,
+            url: "https://192.168.99.100:3001",
+            sniffPort: 3011
         },
         {
             transport: "HTTP/2",
-            url: hosts.h2,
-            sniffPort: 3002
+            url: "https://192.168.99.100:3001",
+            baseUrl: hosts.h2,
+            sniffPort: 3022
         },
         {
             transport: "WebSocket",
-            url: hosts.h1,
-            sniffPort: 3001
+            url: "https://192.168.99.100:3001",
+            baseUrl: hosts.h1,
+            sniffPort: 3011
         }
     ]
 };
 
-addVariation(conditions, "howMany", [10, 20, 30, 40, 50, 60]);
-addNetworkingVariations(conditions);
-
-//console.log(conditions.transports.length);
-
+//addVariation(conditions, "howMany", [10, 20]);
+addVariation(conditions, "howMany", [20, 40, 60]);
+addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
 
 function clientScript(config, callback) {
-    start(config.transport, config.howMany).then(res => {
+    start(config).then(res => {
         res.requests = window.performance.getEntriesByType("resource");
         res.measures = window.performance.getEntriesByType("measure");
         res.marks = window.performance.getEntriesByType("mark");

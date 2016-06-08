@@ -28,6 +28,8 @@ class NetworkLimiter {
             return this.reset();
         }
 
+        latency += "ms";
+
         log(`Limit latency: ${latency}`);
 
         return this.reset()
@@ -39,15 +41,6 @@ class NetworkLimiter {
             .catch(err => {
                 //ignore: there are no existing rules defined for qdisc
                 return Promise.resolve();
-                /*
-                console.log("err.message", err.message);
-                if(err.message.indexOf("RTNETLINK answers: No such file or directory") !== -1) {
-                    console.log("resiled");
-
-                }
-
-                throw err;
-                */
             });
     }
 }

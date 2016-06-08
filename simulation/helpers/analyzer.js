@@ -4,10 +4,10 @@ const ss = require("simple-statistics");
 const { LatexTable, chartTemplates, requestDurationDistribution } = require("../../helpers");
 const transports = ["HTTP/1.1", "HTTP/2", "WebSocket"];
 
-exports.duration = function (results, resultDir, tableCaption, tableLabel, chartName) {
+exports.duration = function (results, outputPath, tableCaption, tableLabel, chartName) {
 
     results.forEach((r) => {
-        console.log(`${r.transport}  ${r.network} ${r.result.resources.length}`);
+        console.log(`${r.transport}  ${r.latency}`);
     });
 
     const tbl = new LatexTable({
@@ -17,10 +17,10 @@ exports.duration = function (results, resultDir, tableCaption, tableLabel, chart
     });
 
     results.forEach((r) => {
-        tbl.push([r.transport, r.network, parseFloat(r.duration).toFixed(2), r.pcap.numberOfPackets, r.pcap.dataSize, r.pcap.averagePacketSize]);
+        tbl.push([r.transport, r.latency, parseFloat(r.duration).toFixed(2), r.numberOfPackets, r.dataSize, r.averagePacketSize]);
     });
 
-    chartTemplates.transportDuration(chartName, `${resultDir}/duration.pdf`, results);
+    chartTemplates.transportDuration(chartName, outputPath, results);
     console.log(tbl.toLatex());
 };
 
@@ -100,12 +100,12 @@ exports.requestDistribution = function (results, resultDir) {
             .filter(r => r.transport === transport)
             .map((result) => {
 
-                return requestDurationDistribution(result.result.measures).map(dist => {
+                return requestDurationDistribution(result.measures).map(dist => {
                     return {
                         network: result.network,
                         name: dist.name,
                         count: dist.count,
-                        percent: dist.count / result.result.measures.length
+                        percent: dist.count / result.measures.length
 
                 }})
             });

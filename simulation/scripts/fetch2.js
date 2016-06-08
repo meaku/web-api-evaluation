@@ -45,12 +45,6 @@ class WS {
     }
 }
 
-const fetchJSON = (url) => {
-    return fetch(url)
-        .then(res => res.json());
-};
-
-
 function doFetch(resource, fn) {
     performance.mark(`start-${resource}`);
     return fn(resource)
@@ -66,7 +60,6 @@ function bench(howMany, fetch) {
 
     return loadCollection(howMany, fetch)
         .then((res) => {
-            console.log(res);
             window.performance.mark("end-overall");
             performance.measure("overall", `start-overall`, `end-overall`);
 
@@ -78,7 +71,6 @@ function bench(howMany, fetch) {
         });
 }
 
-
 function loadCollection(howMany, fetch) {
     let requests = [];
 
@@ -89,16 +81,29 @@ function loadCollection(howMany, fetch) {
     return Promise.all(requests);
 }
 
-function start(transport, howMany) {
+function fetchClient(baseUrl) {
+    return (resource) => {
+        if(baseUrl) {
+            resource = `https://${baseUrl}/${resource}`;
+        }
+
+        return fetch(resource)
+            .then(res => res.json());
+    };
+}
+
+function start(config) {
+    const { baseUrl, transport, howMany } = config;
+    const [host, port]= baseUrl.split(":");
 
     if (transport.toLowerCase() === "websocket") {
-        const ws = new WS(`wss://${window.location.hostname}:${window.location.port}`);
+        const ws = new WS(`wss://${host}:${port}`);
         return ws.connected.then(() => {
             return bench(howMany, ws.fetch.bind(ws));
         });
     }
     else {
-        return bench(howMany, fetchJSON);
+        return bench(howMany, fetchClient(baseUrl));
     }
 }
 

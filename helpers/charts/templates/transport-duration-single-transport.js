@@ -1,19 +1,8 @@
 "use strict";
 
-const { networks, toChartSeries, chart } = require("../../");
+const { chart } = require("../../");
 
-module.exports = function(title, fileName, data) {
-    const series = toChartSeries(
-        data,
-        "transport",
-        "duration",
-        {
-            "HTTP/1.1": "HTTP/1.1",
-            "HTTP/2": "HTTP/2",
-            "WebSocket": "Websocket"
-        }
-    );
-    
+module.exports = function(title, fileName, categories, series) {
     return chart({
         chart: {
             type: "column",
@@ -26,12 +15,14 @@ module.exports = function(title, fileName, data) {
             text: title
         },
         xAxis: {
-            categories: [20, 40, 80, 160, 320, 640]
+            categories,
+            title: {
+                text: "# Requests"
+            }
         },
         yAxis: {
-            //allowDecimals: false,
             title: {
-                text: "Load Time"
+                text: "Duration (ms)"
             }
         },
         plotOptions: {
