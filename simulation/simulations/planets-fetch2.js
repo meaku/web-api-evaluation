@@ -12,27 +12,33 @@ const conditions = {
         {
             transport: "HTTP/1.1",
             baseUrl: hosts.h1,
+            browser: "firefox",
+            latency: 80,
             url: "https://192.168.99.100:3001",
             sniffPort: 3011
         },
         {
             transport: "HTTP/2",
             url: "https://192.168.99.100:3001",
+            browser: "firefox",
+            latency: 80,
             baseUrl: hosts.h2,
             sniffPort: 3022
         },
         {
             transport: "WebSocket",
             url: "https://192.168.99.100:3001",
+            browser: "firefox",
             baseUrl: hosts.h1,
+            latency: 80,
             sniffPort: 3011
         }
     ]
 };
 
 //addVariation(conditions, "howMany", [10, 20]);
-addVariation(conditions, "howMany", [20, 40, 60]);
-addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
+addVariation(conditions, "howMany", [2, 4, 6, 8, 10]);
+//addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
 
 function clientScript(config, callback) {
     start(config).then(res => {

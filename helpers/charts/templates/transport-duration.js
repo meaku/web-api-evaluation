@@ -22,16 +22,22 @@ module.exports = function(title, fileName, data) {
             width: 600,
             height: 400
         },
+        credits: {
+            enabled: false
+        },
         title: {
             text: title
         },
         xAxis: {
+            title: {
+                text: "Latency (ms)"
+            },
             categories: [20, 40, 80, 160, 320, 640]
         },
         yAxis: {
             //allowDecimals: false,
             title: {
-                text: "Load Time"
+                text: "Load Time (ms)"
             }
         },
         plotOptions: {

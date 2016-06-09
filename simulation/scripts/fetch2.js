@@ -74,8 +74,8 @@ function bench(howMany, fetch) {
 function loadCollection(howMany, fetch) {
     let requests = [];
 
-    for (let i = 1; i <= howMany; i++) {
-        requests.push(doFetch(`planets/${i}`, fetch));
+    for (let i = 0; i < howMany; i++) {
+        requests.push(doFetch(`items/${i}`, fetch));
     }
 
     return Promise.all(requests);

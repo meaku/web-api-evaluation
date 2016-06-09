@@ -47,6 +47,6 @@ function generateItemSet(howMany) {
     return new Array(howMany).fill("").map(() => generateItem());
 }
 
-console.log(generateItemSet(100));
+console.log(JSON.stringify(generateItemSet(100)));
 
 

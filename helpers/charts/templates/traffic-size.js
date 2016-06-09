@@ -3,20 +3,7 @@
 const { networks, toChartSeries, chart } = require("../../");
 const { inspect } = require("util");
 
-module.exports = function(title, fileName, categories, series) {
-    /*
-    const series = toChartSeries(
-        data,
-        "transport",
-        "duration",
-        {
-            "HTTP/1.1": "HTTP/1.1",
-            "HTTP/2": "HTTP/2",
-            "WebSocket": "Websocket"
-        }
-    );
-    */
-
+module.exports = function(title, fileName, categories, series, categoryTitle = "# Requests", yTitle = "Data Size (kB)") {
     return chart({
         chart: {
             type: "column",
@@ -28,13 +15,19 @@ module.exports = function(title, fileName, categories, series) {
         title: {
             text: title
         },
+        credits: {
+            enabled: false
+        },
         xAxis: {
-            //categories: ["Fetch"]
+            categories,
+            title: {
+                text: categoryTitle
+            }
         },
         yAxis: {
             //allowDecimals: false,
             title: {
-                text: "TCP Size (kB)"
+                text: yTitle
             }
         },
         plotOptions: {
