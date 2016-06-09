@@ -60,10 +60,14 @@ function bench(howMany, fetch) {
 
     return loadCollection(howMany, fetch)
         .then((res) => {
-            window.performance.mark("end-overall");
+            if(res.length !== howMany) {
+                throw new Error("Unexpected Data Length");
+            }
+
+            performance.mark("end-overall");
             performance.measure("overall", `start-overall`, `end-overall`);
 
-            const measures = window.performance.getEntriesByType("measure");
+            const measures = performance.getEntriesByType("measure");
 
             return {
                 duration: measures.find(r => r.name === "overall").duration

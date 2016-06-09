@@ -12,7 +12,7 @@ function saveRequire(path, errorMsg) {
     }
     catch (err) {
         console.log(err.message);
-        if(err.message.indexOf("Cannot find module ") === -1) {
+        if (err.message.indexOf("Cannot find module ") === -1) {
             throw err;
         }
         throw new Error(errorMsg);
@@ -24,20 +24,21 @@ const simulation = saveRequire(`${__dirname}/simulations/${name}`, "Could not fi
 if (task === "run") {
 
     if (simulation.run) {
-        simulation.run();
+        simulation.run().then(() => process.exit(0));
         return;
     }
-    
+
     runSimulation(simulation.conditions, simulation.script, simulation.runner, simulation.resultDir)
         .then((res) => {
-            simulation.analyze(res);
+            return simulation.analyze(res);
         })
+        .then(() => process.exit(0))
         .catch(err => console.error(err.message, err.stack));
-    
+
     return;
 }
 
 const results = saveRequire(simulation.resultDir + "/results.json", "No results found...");
 
-simulation.analyze(results);
+simulation.analyze(results).then(() => process.exit(0));
 

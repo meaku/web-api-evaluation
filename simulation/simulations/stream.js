@@ -32,7 +32,6 @@ const conditions = {
 
 const script = fs.readFileSync(path.resolve(__dirname, "../test.js")).toString("utf-8");
 
-console.log(script);
 
 function clientScript(config, callback) {
    start({}).then(r => {
