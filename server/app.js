@@ -10,18 +10,15 @@ const express = require("express");
 var app = express();
 
 function shouldCompress(req, res) {
-    console.log("compress?", process.env.compression);
-
     if (process.env.compression) {
         // fallback to standard filter function
         return compression.filter(req, res)
     }
-
-    // don't compress responses with this request header
+    
     return false;
 }
 
-app.use(compression({filter: shouldCompress}));
+app.use(compression({ filter: shouldCompress }));
 
 //app.use(compression());
 
@@ -106,31 +103,60 @@ app.get("/streamed-polling", (req, res) => {
     });
 });
 
-app.get("/stream/:resource", (req, res) => {
-    let resource = resources[req.params.resource];
-    res.send(resource.readCollectionStream());
+app.get("/:resourceType/:range", (req, res, next) => {
+    const { resourceType, range } = req.params;
+
+    if(!range || range.indexOf("-") === -1) {
+        next();
+        return;
+    }
+
+    let resource = resources[resourceType];
+    let [startId, endId] = range.split("-");
+    let ids = [];
+
+    startId = parseInt(startId);
+    endId = parseInt(endId);
+
+    for (startId; startId <= endId; startId++) {
+        ids.push(startId);
+    }
+
+    resource.readCollectionBatch(ids)
+        .then(items => {
+
+            //stream mode
+            if(req.query.stream) {
+                return res.send(items.map(d => JSON.stringify(d)).join("\n"));
+            }
+
+            res.json(items)
+        })
+        .catch(next);
 });
 
-app.get("/:resource/:id?", (req, res) => {
-    if (!resources[req.params.resource]) {
+app.get("/:resourceType/:id?", (req, res, next) => {
+    const { id, resourceType } = req.params;
+    const resource = resources[resourceType];
+    
+    if (!resource) {
         res.json({
             error: "invalid-resource"
         });
 
         return;
     }
-
-    let resource = resources[req.params.resource];
-
-    if (!req.params.id) {
-        resource.readCollection().then((data) => res.json(data));
-        return;
+    
+    if (!id) {
+        return resource.readCollection()
+            .then((data) => res.json(data))
+            .catch(next);
     }
 
-    const id = req.params.id;
-
     resource.read(id)
-        .then((data) => res.json(data))
+        .then((data) => {
+            res.json(data)
+        })
         .catch((err) => {
             console.error(err);
 

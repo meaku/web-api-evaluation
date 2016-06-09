@@ -2,6 +2,24 @@
 
 const WebSocketServer = require("ws").Server;
 
+function readCollection(resource, send) {
+    resource.readCollection()
+        .then(payload => send(payload))
+        .catch((err) => send(err));
+}
+
+function readCollectionBatch(resource, ids, send) {
+    resource.readCollectionBatch(ids)
+        .then(payload => send(payload))
+        .catch((err) => send(err));
+}
+
+function read(resource, id, send) {
+    resource.read(id)
+        .then(payload => send(payload))
+        .catch((err) => send(err));
+}
+
 module.exports = function init(server, resources) {
     const wss = new WebSocketServer({
         server: server,
@@ -9,51 +27,57 @@ module.exports = function init(server, resources) {
     });
 
     wss.on("connection", function connection(ws) {
-        function send(data) {
-            ws.send(JSON.stringify(data));
-        }
-
         ws.on("message", function incoming(message) {
             message = JSON.parse(message);
 
             const requestId = message.requestId;
             let url = message.payload.url;
 
+            function send(payload) {
+                const data = {
+                    requestId,
+                    payload
+                };
+                ws.send(JSON.stringify(data));
+            }
+
             //append trailing slash
             if(url.indexOf("/") === -1) {
                 url += "/";
             }
-
+            
             const [type, id] = url.split("/");
+            const resource = resources[type];
+            
+            console.log(type, id);
 
-            if (!type || !resources[type]) {
+            if (!resource) {
                 send({ error: "resource not found" });
                 return;
             }
 
-            const resource = resources[type];
-
-            if (!id) {
-                resource.readCollection()
-                    .then((payload) => {
-                        send({
-                            requestId,
-                            payload
-                        })
-                    })
-                    .catch((err) => console.error(err));
-
-                return;
+            if(!id){
+                return readCollection(resource, send);
             }
 
-            resource.read(id)
-                .then((payload) => {
-                    send({
-                        requestId,
-                        payload
-                    })
-                })
-                .catch((err) => console.error(err));
+            //detect range request
+            if(id.indexOf("-") !== -1) {
+                let [startId, endId] = id.split("-");
+                const ids = [];
+
+                startId = parseInt(startId);
+                endId = parseInt(endId);
+
+                for (startId; startId <= endId; startId++) {
+                    ids.push(startId);
+                }
+
+                console.log("ids", ids);
+
+                return readCollectionBatch(resource, ids, send);
+            }
+
+            return read(resource, id, send);
         });
     });
 };
