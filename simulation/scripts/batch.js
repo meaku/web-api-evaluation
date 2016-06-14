@@ -2,9 +2,13 @@
 
 class WS {
     constructor(url) {
-        this.ws = new WebSocket(url);
-
+        this.url = url;
         this.onMessage = [];
+        return this;
+    }
+
+    connect() {
+        this.ws = new WebSocket(this.url);
 
         this.ws.onmessage = (event) => {
             event = JSON.parse(event.data);
@@ -27,21 +31,25 @@ class WS {
 
     fetch(resource) {
         const self = this;
-        return new Promise((resolve) => {
-            const requestId = resource + Date.now();
 
-            self.onMessage[requestId.toString()] = function (res) {
-                resolve(res);
-            };
+        if (!this.connected) {
+            this.connect();
+        }
 
-            self.ws.send(JSON.stringify({
-                requestId: requestId,
-                payload: {
-                    method: "get",
-                    url: resource
-                }
+        return this.connected
+            .then(() => new Promise(resolve => {
+                const requestId = resource + Date.now();
+
+                self.onMessage[requestId.toString()] = resolve;
+
+                self.ws.send(JSON.stringify({
+                    requestId: requestId,
+                    payload: {
+                        method: "get",
+                        url: resource
+                    }
+                }));
             }));
-        });
     }
 }
 
@@ -61,8 +69,13 @@ function bench(howMany, fetch) {
     return doFetch(`items/1-${howMany}`, fetch)
         .then(res => {
             if(res.length !== howMany) {
-                throw new Error("Unexpected Data Length");
+                throw new Error("Unexpected Response: Expected " + howMany + ", got " + res.length)
             }
+            
+            res.forEach(item => {
+                performance.mark(`loaded-${item.id}`);
+                performance.measure(`ttd-${item.id}`, "start-overall", `loaded-${item.id}`)
+            });
 
             performance.mark("end-overall");
             performance.measure("overall", `start-overall`, `end-overall`);
@@ -76,7 +89,7 @@ function bench(howMany, fetch) {
 
 function fetchClient(baseUrl) {
     return (resource) => {
-        if(baseUrl) {
+        if (baseUrl) {
             resource = `https://${baseUrl}/${resource}`;
         }
 
@@ -91,9 +104,7 @@ function start(config) {
 
     if (transport.toLowerCase() === "websocket") {
         const ws = new WS(`wss://${host}:${port}`);
-        return ws.connected.then(() => {
-            return bench(howMany, ws.fetch.bind(ws));
-        });
+        return bench(howMany, ws.fetch.bind(ws));
     }
     else {
         return bench(howMany, fetchClient(baseUrl));

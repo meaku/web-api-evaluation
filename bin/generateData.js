@@ -23,9 +23,12 @@ function rArray(howMany) {
     return new Array(howMany).fill("").map(() => rString(10));
 }
 
+let id = 1;
+
 function generateItem() {
     return {
         name: rString(20),
+        id: id++,
         "rotation_period": rNumber(5),
         "orbital_period": rNumber(4),
         "diameter": rNumber(6),
@@ -38,7 +41,8 @@ function generateItem() {
         "edited": rDate(),
         "url": rString(20),
         "description": rString(100),
-        "films": rArray(4),
+        "longText": rString(200),
+        "films": rArray(20),
         "residents": rArray(10)
     }
 }

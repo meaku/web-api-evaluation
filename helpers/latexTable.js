@@ -3,10 +3,10 @@
 const Table = require("cli-table");
 
 const texChars = {
-    'top': '', 'top-mid': '', 'top-left': '', 'top-right': ''
-    , 'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': ''
-    , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
-    , 'right': '\\\\', 'right-mid': '', 'middle': '&'
+    "top": '', "top-mid": '', "top-left": '', "top-right": ''
+    , "bottom": '', "bottom-mid": '', "bottom-left": '', "bottom-right": ''
+    , "left": '', "left-mid": '', "mid": '', "mid-mid": ''
+    , "right": "\\\\", "right-mid": '', "middle": "&"
 };
 
 function tabular(head, rows) {
@@ -48,15 +48,22 @@ class LatexTable {
         //make header bold
         options.head = options.head.map(head => `\\bfseries ${head}`);
 
+        options.style =  {
+                'padding-left': 1
+                , 'padding-right': 1
+                , head: []
+                , border: []
+                , compact : true
+        };
+
         const tbl = new Table(options);
 
         tbl.toLatex = function() {
-            //console.log(tbl);
             let rows = tbl.toString().split("\n");
+
             const head = rows.shift();
 
             rows = rows.join("\n");
-
             return wrapper(options.caption, options.label, tabular(head, rows));
         };
         

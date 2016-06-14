@@ -30,10 +30,15 @@ exports.trafficXNumberOfPackets = function (config, results) {
     }, results)
 };
 
-//TODO multiple times (20, 40, 100)
-exports.transportDurationsXTransport = function (config, results) {
+exports.transportDurationsXTransport = function (config, results, series) {
     const { fileName, title } = config;
-    return transportDuration(title, fileName, results);
+    series = series || toChartSeries(
+        results,
+        "transport",
+        "duration"
+    );
+
+    return transportDuration(title, fileName, series, config.stacked);
 };
 
 function durationXLatency(config, results) {

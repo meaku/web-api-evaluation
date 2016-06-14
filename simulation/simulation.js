@@ -54,6 +54,11 @@ function runSimulation(conditions, script, runner, resultDir) {
                 .then(() => console.log("run", condition))
                 .then(() => runner(driver, condition))
                 .then((result) => {
+                    if(result.error) {
+                        console.error(result.error, result.stack);
+                        throw new Error("Simulation failed: " + result.error);
+                    }
+
                     return driver.quit()
                         .then(() => {
                             if (condition.sniffPort) {

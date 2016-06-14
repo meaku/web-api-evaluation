@@ -34,13 +34,15 @@ addVariation(conditions, "howMany", [20, 40, 60, 80, 100]);
 addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
 
 function clientScript(config, callback) {
-    start(config).then(res => {
-        res.requests = window.performance.getEntriesByType("resource");
-        res.measures = window.performance.getEntriesByType("measure");
-        res.marks = window.performance.getEntriesByType("mark");
-        res.timing = window.performance.timing;
-        callback(res);
-    });
+    start(config)
+        .then(res => {
+            res.requests = window.performance.getEntriesByType("resource");
+            res.measures = window.performance.getEntriesByType("measure");
+            res.marks = window.performance.getEntriesByType("mark");
+            res.timing = window.performance.timing;
+            callback(res);
+        })
+        .catch((err) => callback({ error: err.message, stack: err.stack }));
 }
 
 function runner(driver, config) {
@@ -52,11 +54,17 @@ function analyze(results) {
 
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
-        .then(() =>{
+        .then(() => {
             return Promise.all([
                 analyzer.plotDurations(),
                 analyzer.plotTraffic(),
                 analyzer.plotDurationPerTransport()
+            ]);
+        })
+        .then(() => {
+            return Promise.all([
+                analyzer.tableDurations(),
+                analyzer.tableTrafficData()
             ]);
         })
         .catch((err) => console.error(err.message, err.stack));

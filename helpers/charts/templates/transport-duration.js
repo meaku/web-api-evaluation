@@ -1,19 +1,9 @@
 "use strict";
 
-const { networks, toChartSeries, chart } = require("../../");
+const { chart } = require("../../");
 
-module.exports = function(title, fileName, data) {
-    const series = toChartSeries(
-        data,
-        "transport",
-        "duration",
-        {
-            "HTTP/1.1": "HTTP/1.1",
-            "HTTP/2": "HTTP/2",
-            "WebSocket": "Websocket"
-        }
-    );
-    
+module.exports = function(title, fileName, series, stacking = false) {
+   
     return chart({
         chart: {
             type: "column",
@@ -42,6 +32,7 @@ module.exports = function(title, fileName, data) {
         },
         plotOptions: {
             series: {
+                stacking: stacking,
                 dataLabels: {
                     shape: "callout",
                     backgroundColor: "rgba(0, 0, 0, 0.75)",

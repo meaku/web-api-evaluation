@@ -1,76 +1,76 @@
 "use strict";
 
 const { hosts, resultsDir } = require("../common.config.js");
-const { addNetworkingVariations,  } = require("../helpers");
-const { LatexTable, chartTemplates } = require("../../helpers");
-const runSimulation = require("../simulation");
-const resultDir = `${resultsDir}/planets-fetch`;
-const fs = require("fs");
-const path = require("path");
+const { addVariation, loadScript } = require("../helpers");
+const Analyzer = require("../Analyzer");
+
+const resultDir = `${resultsDir}/stream`;
+const script = loadScript("stream");
 
 const conditions = {
     "transports": [
         {
             transport: "HTTP/1.1",
-            url: hosts.h1,
-            sniffPort: 3001
+            baseUrl: hosts.h1,
+            url: "https://192.168.99.100:3001",
+            sniffPort: 3011
         },
         {
             transport: "HTTP/2",
-            url: hosts.h2,
-            sniffPort: 3002
-        },
-        {
-            transport: "WebSocket",
-            url: hosts.h2,
-            sniffPort: 3002
+            url: "https://192.168.99.100:3001",
+            baseUrl: hosts.h2,
+            sniffPort: 3022
         }
     ]
 };
 
-//addNetworkingVariations(conditions);
-
-const script = fs.readFileSync(path.resolve(__dirname, "../test.js")).toString("utf-8");
-
+addVariation(conditions, "howMany", [20, 40, 60, 80, 100]);
+addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
 
 function clientScript(config, callback) {
-   start({}).then(r => {
-       callback({
-           measures: window.performance.getEntriesByType("measure")
-       });
-   });
+    start(config)
+        .then(res => {
+            res.requests = window.performance.getEntriesByType("resource");
+            res.measures = window.performance.getEntriesByType("measure");
+            res.marks = window.performance.getEntriesByType("mark");
+            res.timing = window.performance.timing;
+            callback(res);
+        })
+        .catch((err) => callback({ error: err.message, stack: err.stack }));
 }
 
 function runner(driver, config) {
-    if (!config) {
-        return Promise.reject(new Error("Missing config"));
-    }
-
-    driver.get(config.url);
-    driver.manage().timeouts().setScriptTimeout(100000);
-    driver.executeScript(script);
     return driver.executeAsyncScript(clientScript, config);
 }
 
-function analyze(res) {
-   //console.log(
+function analyze(results) {
+    const analyzer = new Analyzer("results_stream", resultDir);
 
-       res.transports.forEach((result) => {
-           console.log(result.result.measures);
-       })
-}
-
-function run() {
-    runSimulation(conditions, runner, resultDir)
-        .then((res) => {
-            analyze(res);
+    return analyzer.connect()
+        .then(() => analyzer.tableDistribution())
+        /*
+        .then(() => analyzer.updateResults(resultDir + "/results.json"))
+        .then(() => {
+            return Promise.all([
+                analyzer.plotDurations(),
+                analyzer.plotTraffic(),
+                analyzer.plotDurationPerTransport()
+            ]);
         })
-        .catch(err => console.error(err.message, err.stack));
+        .then(() => {
+            return Promise.all([
+                analyzer.tableDurations(),
+                analyzer.tableTrafficData()
+            ]);
+        })
+        */
+        .catch((err) => console.error(err.message, err.stack));
 }
 
-exports.run = run;
-exports.analyze = analyze;
-
-run();
-//analyze(require(`${resultDir}/results.json`));
-
+module.exports = {
+    resultDir,
+    analyze,
+    conditions,
+    runner,
+    script
+};

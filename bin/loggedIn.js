@@ -1,7 +1,7 @@
 "use strict";
 
 const url = require("url");
-const Table = require("cli-table");
+const Table = require("../helpers").LatexTable;
 const stats = require("simple-statistics");
 
 const results = require("../results/loggedIn.json");
@@ -12,38 +12,38 @@ const { filterByApi, filterByDomain, findByValue, analyzeRequestDestinations, te
 
 const transportsTable = new Table({
     head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "SSE"],
-    colWidths: [20, 20, 20, 20, 20, 20],
-    chars: texChars
+    caption: "Pervasiveness of Browser Networking APIs: Web Apps",
+    label: "table:evaluation-transports-webapps"
+    //colWidths: [20, 20, 20, 20, 20, 20]
 });
 
 const offlineTbl = new Table({
-    head: ["Domain", "AppCache", "ServiceWorker", "LocalStorage", "SessionStorage", "IndexedDB"],
-    colWidths: [35, 20, 20, 20, 20, 20],
-    chars: texChars
+    head: ["Domain", "AC", "SW", "LS", "SS", "IDB"],
+    caption: "Pervasiveness of Browser Offline APIs: Web Apps",
+    label: "table:evaluation-offline-webapps"
+    //colWidths: [35, 20, 20, 20, 20, 20]
 });
 
 const requestsTbl = new Table({
     head: ["Domain", "Requests", "Min", "Max", "Median", "\\sigma", "Max Domain"],
-    colWidths: [35, 10, 10, 10, 20, 20, 40],
-    chars: texChars
+    caption: "Request Distribution: Web Apps",
+    label: "table:evaluation-request-distribution-webapps"
+    //colWidths: [35, 10, 10, 10, 20, 20, 40]
 });
 
 const requestDestinationsTable = new Table({
     head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
-    colWidths: [35, 20, 20, 20, 20],
-    chars: texChars
+    //colWidths: [35, 20, 20, 20, 20]
 });
 
 const requestDistCountTable = new Table({
     head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
-    colWidths: [35, 20, 20, 20, 20],
-    chars: texChars
+    //colWidths: [35, 20, 20, 20, 20]
 });
 
 const requestDistDomainsTable = new Table({
     head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
-    colWidths: [35, 20, 20, 20, 20],
-    chars: texChars
+    //colWidths: [35, 20, 20, 20, 20]
 });
 
 function analyzeRequests(requests, domain) {
@@ -155,19 +155,18 @@ Object.keys(results)
     });
 
 //Uncomment for copy&waste tables
+/*
 transportsTable.push(addStatsRow(transportsTable).map(stats => stats.percent));
 offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
-
 offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
-
 requestsTbl.push(addStatsRow(requestsTbl).map(stats => stats.mean));
-
 requestDistCountTable.push(addStatsRow(requestDistCountTable).map(stats => stats.mean));
 requestDistDomainsTable.push(addStatsRow(requestDistDomainsTable).map(stats => stats.mean));
+*/
 
-console.log(transportsTable.toString());
-console.log(offlineTbl.toString());
-console.log(requestsTbl.toString());
-console.log(requestDestinationsTable.toString());
-console.log(requestDistCountTable.toString());
-console.log(requestDistDomainsTable.toString());
+console.log(transportsTable.toLatex());
+console.log(offlineTbl.toLatex());
+console.log(requestsTbl.toLatex());
+console.log(requestDestinationsTable.toLatex());
+console.log(requestDistCountTable.toLatex());
+console.log(requestDistDomainsTable.toLatex());
