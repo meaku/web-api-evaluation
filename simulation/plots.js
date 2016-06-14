@@ -1,7 +1,7 @@
 "use strict";
 
-const { toChartSeries, swapSeries } = require("./helpers");
-const { trafficSize, transportDuration, transportDurationSingleTransport } = require("../helpers").chartTemplates;
+const { toChartSeries, swapSeries, calculateDistribution } = require("./helpers");
+const { trafficSize, transportDuration, transportDurationSingleTransport, requestDistribution } = require("../helpers").chartTemplates;
 
 function trafficXHowMany(config, results) {
     const { yField, fileName, yLabel, xLabel, title } = config;
@@ -56,6 +56,13 @@ function durationXHowMany(config, results) {
     return transportDurationSingleTransport("Load Time subject to # of Requests: " + transport, filePath, sCategories, sSeries);
 }
 
+function requestDistributionXTransport(config, results) {
+    const { filePath } = config;
+    const series = calculateDistribution(results);
+    
+    requestDistribution("Item Distribution", filePath + "/distribution.pdf", ["HTTP/1.1", "HTTP/2", "WebSocket"], series);
+}
+
 /**
  * results must be limited to a transport
  * { transport }, { "condition.latency": 1, "condition.howMany": 1 }
@@ -82,3 +89,4 @@ function transportDurationPerTransport(config, results) {
 }
 
 exports.transportDurationPerTransport = transportDurationPerTransport;
+exports.requestDistributionXTransport = requestDistributionXTransport;

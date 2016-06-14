@@ -36,6 +36,7 @@ function chart(chartConfig, filePath) {
 
         const svg = win.document.getElementById("container").childNodes[0].innerHTML;
 
+        //console.log(svg);
         console.log("Writing:" + filePath);
         //send the svg to the export service and save result as pdf
         const piping = request.post({
@@ -49,6 +50,7 @@ function chart(chartConfig, filePath) {
             }
         }).pipe(fs.createWriteStream(filePath));
 
+        piping.on("error", (err) => reject(err));
         piping.on("finish", () => resolve());
     });
 }

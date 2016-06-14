@@ -4,6 +4,7 @@ const defaultHost = "mongodb://localhost:27017/evaluation";
 const {
     transportDurationsXTransport,
     transportDurationPerTransport,
+    requestDistributionXTransport,
     trafficXDataSize,
     trafficXNumberOfPackets
 } = require("./plots");
@@ -157,78 +158,15 @@ class Analyzer {
             });
     }
 
-    distribution(overall, durations, chunks = 4) {
-
-
-        const chunkSize = overall / chunks;
-        //const chunkSize = max / chunks;
-
-        const groups = [];
-        let lastEnd = 0;
-
-        for(let i = 0; i < chunks; i++) {
-            let max = lastEnd + chunkSize;
-            groups.push({
-                //name: " < " + max,
-                name: max.toString(),
-                min: lastEnd,
-                max: max,
-                count: 0,
-                entries: []
-            });
-
-            lastEnd = max;
-        }
-
-        function sort(durations, groups) {
-            durations.forEach(duration => {
-
-                groups.forEach(group => {
-                    if(duration >= group.min && duration <= group.max) {
-                        group.count++;
-                        group.entries.push(duration);
-                    }
-                });
-            });
-
-            return groups;
-        }
-
-        return sort(durations, groups);
-    }
-
-    tableDistribution() {
+    plotDistribution(howMany = 100, latency = 640) {
         const self = this;
 
-
-        return this.query({ "condition.latency": 20, "condition.howMany": 100 }, { "condition.transport": 1 })
+        return this.query({  "condition.howMany": howMany, "condition.latency": latency }, { "condition.transport": 1 })
             .then((results) => {
-
-                results.forEach(result => {
-                    console.log(result.transport, result.howMany, result.latency + " " + result.duration +  "\n");
-
-
-                    let measures = result.measures
-                        .filter(measure => measure.name !== "overall")
-                        /*
-                        .forEach((measure) => {
-                            console.log(measure.name, measure.duration);
-                        })
-                        */
-                        .map(measure => measure.duration);
-
-
-                    let dist = self.distribution(result.duration, measures);
-
-                   console.log(dist);
-
-                });
-
-
-
-
+                return requestDistributionXTransport({
+                    filePath: self.resultDir
+                }, results);
             });
-
     }
 }
 

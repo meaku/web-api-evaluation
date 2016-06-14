@@ -132,3 +132,70 @@ exports.toChartSeries = function toChartSeries(results, sName, sValue) {
     });
 };
 
+function distribution(overall, durations, chunks = 4) {
+    const chunkSize = overall / chunks;
+    const chunkPercSize = 100 /chunks;
+
+    const groups = [];
+    let lastEnd = 0;
+
+    for(let i = 1; i <= chunks; i++) {
+        let max = lastEnd + chunkSize;
+        groups.push({
+            //name: " < " + max,
+            name: chunkPercSize * i,
+            min: lastEnd,
+            max: max,
+            count: 0,
+            entries: []
+        });
+
+        lastEnd = max;
+    }
+
+    function sort(durations, groups) {
+        durations.forEach(duration => {
+            groups.forEach(group => {
+                if(duration >= group.min && duration <= group.max) {
+                    group.count++;
+                    //group.entries.push(duration);
+                }
+            });
+        });
+
+        return groups;
+    }
+
+    return sort(durations, groups);
+}
+
+exports.calculateDistribution = function calculateDistribution(results) {
+    const final = {};
+
+    results.forEach(result => {
+        console.log(result.transport, result.latency + " " + result.duration +  "\n");
+
+        let measures = result.measures
+            .filter(measure => measure.name !== "overall" && measure.name.indexOf("ttd") !== -1)
+            .map(measure => measure.duration);
+
+        let dist = distribution(result.duration, measures, 5);
+
+        //console.log(dist);
+        dist.forEach(d => {
+            let key = d.name;
+
+            if(!final[key]) {
+                final[key] = {
+                    name: key,
+                    data: []
+                }
+            }
+
+            final[key].data.push(d.count);
+        });
+    });
+
+    //reverse for chart!
+    return Object.keys(final).map(key => final[key]).reverse();
+};
