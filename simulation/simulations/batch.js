@@ -54,6 +54,8 @@ function analyze(results) {
 
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
+        .then(() => analyzer.plotDistribution())
+        .then(() => analyzer.plotTTFI())
         .then(() => {
             return Promise.all([
                 analyzer.plotDurations(),

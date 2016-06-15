@@ -9,36 +9,32 @@ const resultDir = path.resolve(__dirname, "../results/simulation/overall");
 
 const analyzer = new Analyzer("results_batch", __dirname);
 
+function fetchDataForType(type, collection, transport, howMany) {
+    return analyzer.query({ transport, "condition.howMany": howMany }, {
+        "transport": 1,
+        "condition.latency": 1
+    }, collection)
+        .then(res => {
+            return res.map(r => {
+                r.type = type;
+                return r;
+            });
+        })
+}
+
 function plotDurationsXType(transport, howMany, name, fileName) {
     return Promise.all([
-        analyzer.query({ transport, "condition.howMany": howMany }, {
-            "transport": 1,
-            "condition.latency": 1
-        }, "results_multiple")
-            .then(res => {
-                return res.map(r => {
-                    r.type = "Multiple";
-                    return r;
-                });
-            }),
-        analyzer.query({ transport, "condition.howMany": howMany }, {
-            "transport": 1,
-            "condition.latency": 1
-        }, "results_batch")
-            .then(res => {
-                return res.map(r => {
-                    r.type = "Batch";
-                    return r;
-                });
-            })
+        fetchDataForType("Multiple", "results_multiple", transport, howMany),
+        fetchDataForType("Batch", "results_batch", transport, howMany),
+        fetchDataForType("Stream", "results_stream", transport, howMany)
     ])
-        .then((results) => [...results[0], ...results[1]])
+        .then((results) => [...results[0], ...results[1], ...results[2]])
         .then((results) => {
             const res = toChartSeries(results, "type", "duration");
             return transportDurationsXTransport({
                 name,
                 fileName,
-                stacked: "normal"
+                stacked: false
             }, {}, res);
         });
 }
@@ -46,39 +42,27 @@ function plotDurationsXType(transport, howMany, name, fileName) {
 
 function getSeries(transport, howMany) {
     return Promise.all([
-        analyzer.query({ transport, "condition.howMany": howMany }, {
-            "transport": 1,
-            "condition.latency": 1
-        }, "results_multiple")
-            .then(res => {
-                return res.map(r => {
-                    r.type = `Multiple (${transport})`;
-                    return r;
-                });
-            }),
-        analyzer.query({ transport, "condition.howMany": howMany }, {
-            "transport": 1,
-            "condition.latency": 1
-        }, "results_batch")
-            .then(res => {
-                return res.map(r => {
-                    r.type = `Batch (${transport})`;
-                    return r;
-                });
-            })
+        fetchDataForType(`Multiple (${transport})`, "results_multiple", transport, howMany),
+        fetchDataForType(`Batch (${transport})`, "results_batch", transport, howMany),
+        fetchDataForType(`Stream (${transport})`, "results_stream", transport, howMany)
     ])
-        .then((results) => [...results[0], ...results[1]])
+        .then((results) => [...results[0], ...results[1], ...results[2]])
         .then((results) => {
             const series = toChartSeries(results, "type", "duration");
-            return series.map((group) => {
-                if(group.name.indexOf("Multiple") !== -1) {
-                    group.stack = "multiple";
-                }
-                else {
-                    group.stack = "batch";
-                }
-                return group;
-            });
+            console.log(series);
+
+            /*
+             return series.map((group) => {
+             if (group.name.indexOf("Multiple") !== -1) {
+             group.stack = "multiple";
+             }
+             else {
+             group.stack = "batch";
+             }
+             return group;
+             });
+             */
+            return series;
         });
 }
 
@@ -114,7 +98,11 @@ analyzer.connect()
         return Promise.all(mergeVariations.map(config => getSeries(config.transport, config.howMany)))
             .then(res => {
                 //with stacking
-                return transportDurationsXTransport({ name: "Merged", fileName: resultDir + "/merged.pdf", stacked: "normal" }, {}, _.flatten(res))
+                return transportDurationsXTransport({
+                    name: "Merged",
+                    fileName: resultDir + "/merged.pdf",
+                    stacked: false
+                }, {}, _.flatten(res))
             })
 
     })

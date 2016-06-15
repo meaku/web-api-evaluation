@@ -88,7 +88,7 @@ function bench(howMany, fetch) {
 function loadMultiple(howMany, fetch) {
     let requests = [];
 
-    for (let i = 0; i < howMany; i++) {
+    for (let i = 1; i <= howMany; i++) {
         requests.push(doFetch(`items/${i}`, fetch));
     }
 

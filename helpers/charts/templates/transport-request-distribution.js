@@ -47,7 +47,7 @@ module.exports = function(title = "Item Distribution", fileName, categories = ["
         series
     };
     
-    console.log(inspect(chartConfig, { depth: null }));
+    //console.log(inspect(chartConfig, { depth: null }));
     return chart(chartConfig, fileName);
 };
 

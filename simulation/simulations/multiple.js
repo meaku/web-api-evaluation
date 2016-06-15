@@ -24,8 +24,8 @@ const conditions = {
         {
             transport: "WebSocket",
             url: "https://192.168.99.100:3001",
-            baseUrl: hosts.h1,
-            sniffPort: 3011
+            baseUrl: hosts.h2,
+            sniffPort: 3022
         }
     ]
 };
@@ -53,6 +53,8 @@ function analyze(results) {
     const analyzer = new Analyzer("results_multiple", resultDir);
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
+        .then(() => analyzer.plotDistribution())
+        .then(() => analyzer.plotTTFI())
         .then(() => {
             return Promise.all([
                 analyzer.plotDurations(),

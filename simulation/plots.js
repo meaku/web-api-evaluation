@@ -57,10 +57,10 @@ function durationXHowMany(config, results) {
 }
 
 function requestDistributionXTransport(config, results) {
-    const { filePath } = config;
+    const { fileName } = config;
     const series = calculateDistribution(results);
     
-    requestDistribution("Item Distribution", filePath + "/distribution.pdf", ["HTTP/1.1", "HTTP/2", "WebSocket"], series);
+    requestDistribution("Item Distribution", fileName, ["HTTP/1.1", "HTTP/2", "WebSocket"], series);
 }
 
 /**

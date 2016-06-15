@@ -12,39 +12,40 @@ function fetchJSONStream(url) {
         const decoder = new TextDecoder();
         const reader = response.body.getReader();
         let buffer = "";
-        let item = "";
+    
         const items = [];
 
         function log(str) {
             console.log(str);
+        }
+        
+        function addItem(str) {
+            let item = JSON.parse(str);
+            items.push(item);
+
+            performance.mark(`loaded-${item.id}`);
+            performance.measure(`ttd-${item.id}`, "overall-start", `loaded-${item.id}`);
         }
 
         function processJSON(result) {
             if (result.done) {
                 // no more data, but there might be a JSON object left in the buffer
                 if (buffer.trim()) {
-                    items.push(JSON.parse(buffer));
+                    addItem(buffer);
                 }
                 done = performance.now();
-                log(`Parsed first bit of JSON after ${first - start}ms`);
-                log(`Parsed last bit of JSON after ${done - start}ms`);
                 return items;
             }
 
             buffer += decoder.decode(result.value, { stream: true });
 
             while (true) {
-                const indexOfNewline = buffer.indexOf('\n');
+                const indexOfNewline = buffer.indexOf("\n");
                 if (indexOfNewline == -1) {
                     break;
                 }
 
-                item = JSON.parse(buffer.slice(0, indexOfNewline));
-
-                items.push(item);
-                
-                performance.mark(`loaded-${item.id}`);
-                performance.measure(`ttd-${item.id}`, "overall-start", `loaded-${item.id}`);
+                addItem(buffer.slice(0, indexOfNewline));
 
                 if (!first) {
                     first = performance.now();
@@ -53,13 +54,16 @@ function fetchJSONStream(url) {
                 buffer = buffer.slice(indexOfNewline + 1);
             }
 
-            return reader.read().then(processJSON);
+            return reader
+                .read()
+                .then(processJSON);
         }
 
-        return reader.read().then(processJSON);
+        return reader
+            .read()
+            .then(processJSON);
     });
 }
-
 
 window.start = function (config) {
     performance.mark("overall-start");

@@ -9,6 +9,8 @@ const {
     trafficXNumberOfPackets
 } = require("./plots");
 
+const stats = require("simple-statistics");
+
 const {
     traffic,
     duration
@@ -21,7 +23,7 @@ const fs = Promise.promisifyAll(require("fs"));
 const MongoClient = mongodb.MongoClient;
 
 function perc(n, o) {
-    return ((n - o)/o).toFixed(2)
+    return ((n - o) / o).toFixed(2)
 }
 
 Promise.promisifyAll(mongodb.Cursor.prototype);
@@ -122,29 +124,29 @@ class Analyzer {
 
     tableTrafficData() {
         const self = this;
-        return this.query({ "condition.latency": 80 }, { "condition.transport": 1, "condition.howMany": 1})
+        return this.query({ "condition.latency": 80 }, { "condition.transport": 1, "condition.howMany": 1 })
             .then((results) => traffic({
                 caption: "TCP Traffic",
                 label: "table:tcp-traffic-" + this.collection,
                 fileName: self.resultDir + "/traffic_table.tex"
             }, results));
     }
-    
+
     tableDurations() {
         const self = this;
-        return this.query({}, { "condition.transport": 1, "condition.howMany": 1})
+        return this.query({}, { "condition.transport": 1, "condition.howMany": 1, "condition.latency": 1 })
             .then((results) => {
                 let final = {};
 
                 results.forEach((r) => {
-                    if(!final[r.howMany + "_" + r.latency]) {
-                        final[r.howMany + "_" + r.latency]= {
+                    if (!final[r.howMany + "_" + r.latency]) {
+                        final[r.howMany + "_" + r.latency] = {
                             howMany: r.howMany,
                             latency: r.latency
                         }
                     }
 
-                    final[r.howMany + "_" + r.latency][r.transport + "_diff"] = perc(r.duration, final[r.howMany + "_" + r.latency]['HTTP/1.1']);
+                    final[r.howMany + "_" + r.latency][r.transport + "_diff"] = perc(r.duration, final[r.howMany + "_" + r.latency]["HTTP/1.1"]);
                     final[r.howMany + "_" + r.latency][r.transport] = r.duration.toFixed(2);
                 });
 
@@ -161,12 +163,64 @@ class Analyzer {
     plotDistribution(howMany = 100, latency = 640) {
         const self = this;
 
-        return this.query({  "condition.howMany": howMany, "condition.latency": latency }, { "condition.transport": 1 })
-            .then((results) => {
-                return requestDistributionXTransport({
-                    filePath: self.resultDir
-                }, results);
-            });
+        function plot(howMany) {
+            return self.query({ "condition.howMany": howMany, "condition.latency": latency }, { "condition.transport": 1 })
+                .then((results) => {
+                    return requestDistributionXTransport({
+                        fileName: `${self.resultDir}/distribution_${howMany}.pdf`
+                    }, results);
+                });
+        }
+
+        return Promise.all([
+            plot(20),
+            plot(100)
+        ])
+    }
+
+    plotTTFI(howMany = 100) {
+        const self = this;
+
+        function plot(howMany) {
+            return self.query({ "condition.howMany": howMany }, { "condition.transport": 1, "condition.latency": 1 })
+                .then((results) => {
+                    return results.map(result => {
+                        let ttds = result.measures
+                            .filter(m => m.name.indexOf("ttd") !== -1)
+                            .map(m => m.duration);
+
+                        return {
+                            transport: result.transport,
+                            latency: result.latency,
+                            howMany: result.howMany,
+                            min: stats.min(ttds),
+                            max: stats.max(ttds),
+                            mean: stats.mean(ttds),
+                            median: stats.median(ttds)
+                        };
+                    });
+                })
+                .then(results => {
+                    const result = results.map(r => {
+                        return {
+                            transport: r.transport,
+                            latency: r.latency,
+                            howMany: r.howMany,
+                            duration: r.min
+                        }
+                    });
+
+                    return transportDurationsXTransport({
+                        fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
+                        title: `Time to first item: ${howMany} Items`
+                    }, result)
+                });
+        }
+
+        return Promise.all([
+            plot(20),
+            plot(100)
+        ])
     }
 }
 
