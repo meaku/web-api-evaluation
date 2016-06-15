@@ -23,7 +23,7 @@ const fs = Promise.promisifyAll(require("fs"));
 const MongoClient = mongodb.MongoClient;
 
 function perc(n, o) {
-    return ((n - o) / o).toFixed(2)
+    return (((n - o) / o) * 100).toFixed(2)
 }
 
 Promise.promisifyAll(mongodb.Cursor.prototype);
