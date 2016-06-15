@@ -9,13 +9,15 @@ const websockets = require("./lib/websocket");
 const sse = require("./lib/sse");
 
 const resources = require("./lib/resources");
+const EventStream = require("./lib/EventStream");
 
-const api = require("./app");
+const app = require("./app");
+const es = new EventStream();
 
-let app;
+app.es = es;
+
 let server;
 
-const type = argv.type || "api";
 const httpVersion = argv.httpVersion || "http2";
 const port = argv.port || 3002;
 
@@ -23,19 +25,9 @@ const options = {
     key: fs.readFileSync(__dirname + "/cert/localhost.key"),
     cert: fs.readFileSync(__dirname + "/cert/localhost.crt"),
     spdy: {
-        protocols: ["h2"],
-        plain: false,
-        connection: {
-            windowSize: 1024 * 1024, // Server's window size
-
-            // **optional** if true - server will send 3.1 frames on 3.0 *plain* spdy
-            autoSpdy31: false
-        }
+        protocols: ["h2"]
     }
 };
-
-//server type
-app = api;
 
 //http version
 if (httpVersion === "http2") {
@@ -47,12 +39,12 @@ else {
 }
 
 server.listen(parseInt(port), () => {
-    console.log(`[${type}] [${httpVersion}] Server listening at  ${port}`)
+    console.log(`[${httpVersion}] Server listening at  ${port}`)
 });
 
 let connections = 0;
 server.on("connection", () => console.log("connections: " + ++connections));
 
 //init transportsTable 
-websockets(server, resources);
-sse(server, resources);
+websockets(server, resources, es);
+sse(server, resources, es);

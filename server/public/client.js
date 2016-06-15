@@ -45,32 +45,6 @@ function streamedFetch() {
 
 window.streamedFetch = streamedFetch;
 
-function streamedPollingFetch() {
-    function consume(reader) {
-        var total = 0;
-        return pump();
-
-        function pump() {
-            return reader
-                .read()
-                .then(({ done, value }) => {
-                    if (done) {
-                        return
-                    }
-
-                    total += value.byteLength;
-                    console.log(`received ${value.byteLength} bytes (${total} bytes in total)`);
-                    return pump();
-                })
-        }
-    }
-
-    fetch("/streamed-polling")
-        .then(res => consume(res.body.getReader()))
-        .then(() => console.log("done"))
-        .catch(e => console.error(e));
-}
-
 window.streamedPollingFetch = streamedPollingFetch;
 
 function streamedPolling() {
@@ -245,26 +219,6 @@ function bench(testSet) {
         .catch((err) => console.error(err, err.stack));
 }
 
-window.sse = function () {
-    var es = new EventSource("/sse");
-
-    es.onopen = function () {
-        console.log("sse connection to /see established");
-    };
-
-    es.onerror = function (err) {
-        console.error("An error occurred: " + err.message);
-    };
-
-    es.onmessage = function (event) {
-        console.log(event.data);
-    };
-
-    //listen for messages with type === "important-news"
-    es.addEventListener("breaking-news", function (event) {
-        console.log("Breaking News: ", event.data);
-    });
-};
 
 
 function loadPlanetsSingleRequest(fetch) {
