@@ -23,6 +23,7 @@
     "hoxy": "^3.2.0",
     "jsdom": "^8.5.0",
     "lodash": "^4.13.1",
+    "node-fetch": "^1.5.3",
     "npm-run-all": "^2.1.1",
     "randomstring": "^1.1.5",
     "selenium-webdriver": "^2.53.2",

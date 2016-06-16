@@ -9,6 +9,18 @@ const app = express();
 
 let lastEvent = null;
 
+app.use((req, res, next) => {
+    res.header("access-control-allow-origin", "*");
+    next();
+});
+
+app.use((req, res, next) => {
+    console.log(req.url);
+    next();
+});
+
+app.use(express.static(__dirname + "/public"));
+
 app.use("/start/:interval?", (req, res, next) => {
     function onData(d) {
         lastEvent = d;
@@ -39,27 +51,19 @@ app.get("/streamed-polling", (req, res) => {
     if (!app.http2) {
         res.set("Transfer-encoding", "chunked");
     }
+
+    function onData(data) {
+        res.write(JSON.stringify(data) + "\n");
+    }
     
     app.es.on("end", () => {
+        app.es.removeListener("data", onData);
         res.end();
     });
 
-    app.es.on("data", (data) => {
-        res.write(JSON.stringify(data) + "\n");
-    });
+    app.es.on("data", onData);
 });
 
-app.use((req, res, next) => {
-    res.header("access-control-allow-origin", "*");
-    next();
-});
-
-app.use((req, res, next) => {
-    console.log(req.url);
-    next();
-});
-
-app.use(express.static(__dirname + "/public"));
 
 app.get("/delay/:delay", (req, res) => {
     setTimeout(() => res.json({}), req.params.delay);

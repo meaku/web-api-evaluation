@@ -1,7 +1,10 @@
 "use strict";
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const fs = require("fs");
 const webdriver = require("selenium-webdriver");
+const fetch = require("node-fetch");
 
 const sequence = require("when/sequence");
 const guard = require("when/guard");
@@ -18,7 +21,7 @@ function getDriver(browser = "chrome") {
         .forBrowser(browser)
         .build();
 
-    driver.manage().timeouts().setScriptTimeout(50000);
+    driver.manage().timeouts().setScriptTimeout(5000000);
 
     return driver;
 }
@@ -43,7 +46,7 @@ function runSimulation(conditions, script, runner, resultDir) {
             const trafficFile = `${resultDir}/traffic_${count++}.pcap`;
 
             driver.get(condition.url);
-            driver.manage().timeouts().setScriptTimeout(1000000);
+            driver.manage().timeouts().setScriptTimeout(10000000);
             console.log("execute script");
 
             return driver.executeScript(script)
@@ -51,12 +54,26 @@ function runSimulation(conditions, script, runner, resultDir) {
                 .then(() => sniffer.start(condition.sniffPort || false, trafficFile))
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
+                .then(() => {
+                    if(condition.realtimeInterval) {
+                        console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
+                        return fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
+                    }
+                })
                 .then(() => console.log("run", condition))
                 .then(() => runner(driver, condition))
                 .then((result) => {
-                    if(result.error) {
-                        console.error(result.error, result.stack);
-                        throw new Error("Simulation failed: " + result.error);
+                    if(!result || result.error) {
+                        driver.quit()
+                            .then(() => {
+
+                                if(result.error) {
+                                    console.error(result.error, result.stack);
+                                    throw new Error("Simulation failed: " + result.error);
+                                }
+
+                                throw new Error("Simulation returned an empty result");
+                            });
                     }
 
                     return driver.quit()

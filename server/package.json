@@ -25,6 +25,7 @@
     "express": "^4.13.4",
     "glob-promise": "^1.0.6",
     "npm-run-all": "^2.1.1",
+    "present": "^1.0.0",
     "spdy": "^3.3.2",
     "sse": "0.0.6",
     "when": "^3.7.7",
