@@ -100,14 +100,13 @@ function ws(baseUrl, onItem) {
 
         ws.onerror = reject;
     });
-
 }
 
 function sse(baseUrl, onItem) {
     return new Promise((resolve, reject) => {
         var es = new EventSource("https://" + baseUrl + "/sse");
 
-        es.onerror = reject;
+        es.onerror = (err) => { reject(err); };
 
         es.onmessage = function (event) {
             const data = JSON.parse(event.data);
@@ -131,18 +130,28 @@ const patterns = {
 function start(config) {
     const pattern = config.pattern || "sse";
 
+    window.results = {
+        durations: []
+    };
+
     performance.mark("start-overall");
 
     function onItem(item) {
         console.log(`${pattern} - ${item.id} ${Date.now() - item.createdAt}`);
         performance.mark(`received-${item.id}`);
         performance.measure(`since-start-${item.id}`, "start-overall", `received-${item.id}`);
+        
+        window.results.durations.push({ 
+            id: item.id,
+            duration: Date.now() - item.createdAt
+        });
     }
 
-    return patterns[pattern](config.baseUrl || window.location.host, onItem)
+    return patterns[pattern](config.baseUrl || window.location.host, onItem, config.pollingInterval)
         .then(() => {
             return { durations: performance.getEntriesByType("measure") }
-        });
+        })
+        .catch((err) => window.results.error = err);
 }
 
 window.start = start;

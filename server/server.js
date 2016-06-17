@@ -43,6 +43,7 @@ server.listen(parseInt(port), () => {
 });
 
 let connections = 0;
+server.setTimeout(1000 * 60 * 10);
 server.on("connection", () => console.log("connections: " + ++connections));
 
 //init transportsTable 

@@ -2,6 +2,7 @@
 
 const { LatexTable } = require("../helpers");
 const { writeFileSync } = require("fs");
+const stats = require("simple-statistics");
 
 function traffic(config, results) {
     const { caption, label, fileName } = config;
@@ -35,5 +36,26 @@ function duration(config, results) {
     writeFileSync(fileName, tbl.toLatex());
 }
 
+function realtimeItemCount(config, results) {
+    const { caption, label, fileName } = config;
+
+    const tbl = new LatexTable({
+        head: ["Latency", "Publish Interval", "Poll Interval", "Unique Responses", "Avg. Duration", "Min", "Max", "Traffic"],
+        caption,
+        label
+    });
+
+    results.forEach(r => {
+        let durations = r.durations.map(r => r.duration);
+        
+        //maybe no polling interval for reuse?
+        tbl.push([r.latency, r.realtimeInterval, r.pollingInterval, r.durations.length, stats.mean(durations).toFixed(2), stats.min(durations), stats.max(durations), r.dataSize]);
+    });
+
+    writeFileSync(fileName, tbl.toLatex());
+
+}
+
+exports.realtimeItemCount = realtimeItemCount;
 exports.traffic = traffic;
 exports.duration = duration;

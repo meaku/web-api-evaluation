@@ -28,6 +28,10 @@ function getDriver(browser = "chrome") {
 
 let count = 0;
 
+function realtime() {
+    
+}
+
 /**
  * run a single simulation case
  *
@@ -54,19 +58,34 @@ function runSimulation(conditions, script, runner, resultDir) {
                 .then(() => sniffer.start(condition.sniffPort || false, trafficFile))
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
-                .then(() => {
-                    if(condition.realtimeInterval) {
-                        console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
-                        return fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
-                    }
-                })
                 .then(() => console.log("run", condition))
                 .then(() => runner(driver, condition))
+                .then((results) => {
+                    if(condition.realtimeInterval) {
+                        console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
+                        return fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
+                            .then(res => res.json());
+                    }
+                    
+                    return results;
+                })
                 .then((result) => {
+                    if(condition.realtimeInterval) {
+                        
+                        if(result.status !== "success") {
+                            throw new Error("Server responsed with error: " + result.error);
+                        }
+                        
+                        return driver.executeScript(function() { return window.results; })
+                    }
+                    return result;
+                })
+                .then((result) => {
+                    console.log(result);
+
                     if(!result || result.error) {
                         driver.quit()
                             .then(() => {
-
                                 if(result.error) {
                                     console.error(result.error, result.stack);
                                     throw new Error("Simulation failed: " + result.error);

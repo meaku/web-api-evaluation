@@ -6,14 +6,16 @@ const {
     transportDurationPerTransport,
     requestDistributionXTransport,
     trafficXDataSize,
-    trafficXNumberOfPackets
+    trafficXNumberOfPackets,
+    pushDuration
 } = require("./plots");
 
 const stats = require("simple-statistics");
 
 const {
     traffic,
-    duration
+    duration,
+    realtimeItemCount
 } = require("./tables");
 
 const _ = require("lodash");
@@ -221,6 +223,63 @@ class Analyzer {
             plot(20),
             plot(100)
         ])
+    }
+    
+    plotMeanPublishTime(realtimeInterval, condition = {}) {
+        const self = this;
+        const conditions = { "condition.realtimeInterval": realtimeInterval };
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.transport": 1, "condition.latency": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    result.pollingInterval = result.pollingInterval / 1000;
+                    result.realtimeInterval = result.realtimeInterval / 1000;
+
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    result.avgDuration = stats.mean(durations);
+
+                    return result;
+                });
+            })
+            .then(results => {
+                results.forEach(result => {
+                    console.log(result.transport, result.latency, result.realtimeInterval, ":", result.uniqueCount, result.avgDuration, result.dataSize)
+                });
+
+               return pushDuration({
+                   fileName: `${self.resultDir}/push-duration-${realtimeInterval}.pdf`,
+                   categories: [20, 640]
+               }, results);
+            });
+    }
+    
+    tablePollingDurations(transport, condition = {}) {
+        const self = this;
+
+        let conditions = { transport, "condition.realtimeInterval": 10000 };
+        
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}
+        )
+            .then(results => {
+                return results.map(result => {
+                    result.pollingInterval = result.pollingInterval / 1000;
+                    result.realtimeInterval = result.realtimeInterval / 1000;
+
+                    return result;
+                });
+            })
+            .then(results => {
+                realtimeItemCount({
+                    fileName: `${self.resultDir}/polling_durations_${transport.replace("/", "-")}.tex`,
+                    caption: `Polling Durations: ${transport}`
+                }, results);
+            });
     }
 }
 

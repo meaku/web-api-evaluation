@@ -4,7 +4,7 @@ const { hosts, resultsDir } = require("../common.config.js");
 const { addVariation, loadScript } = require("../helpers");
 const Analyzer = require("../Analyzer");
 
-const resultDir = `${resultsDir}/realtime`;
+const resultDir = `${resultsDir}/sse`;
 const script = loadScript("realtime");
 
 const conditions = {
@@ -12,13 +12,11 @@ const conditions = {
         {
             transport: "HTTP/1.1",
             baseUrl: hosts.h1,
-            realtimeInterval: 1000,
             url: "https://192.168.99.100:3001",
             sniffPort: 3011
         },
         {
             transport: "HTTP/2",
-            realtimeInterval: 1000,
             url: "https://192.168.99.100:3001",
             baseUrl: hosts.h2,
             sniffPort: 3022
@@ -26,15 +24,16 @@ const conditions = {
     ]
 };
 
-//addVariation(conditions, "pattern", ["polling", "longPolling", "streamedPolling", "ws"]);
-addVariation(conditions, "pattern", ["longPolling", "streamedPolling"]);
-addVariation(conditions, "latency", [20, 40, 80]);
-//addVariation(conditions, "latency", [20, 40, 80, 160, 320, 640]);
+addVariation(conditions, "pattern", ["sse"]);
+addVariation(conditions, "latency", [20, 640]);
+addVariation(conditions, "realtimeInterval", [5000, 20000]);
 
 function clientScript(config, callback) {
     start(config)
         .then(res => callback(res))
         .catch((err) => callback({ error: err.message, stack: err.stack }));
+
+    setTimeout(() => callback(), 0);
 }
 
 function runner(driver, config) {
@@ -42,7 +41,7 @@ function runner(driver, config) {
 }
 
 function analyze(results) {
-    const analyzer = new Analyzer("results_realtime", resultDir);
+    const analyzer = new Analyzer("results_sse", resultDir);
 
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))

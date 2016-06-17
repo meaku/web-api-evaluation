@@ -28,12 +28,11 @@ app.use("/start/:interval?", (req, res, next) => {
 
     app.es.start(req.params.interval);
     app.es.on("data", onData);
-    app.es.on("end", () => {
+    app.es.once("end", () => {
         app.es.removeListener("data", onData);
-        lastEvent = null
+        lastEvent = null;
+        res.json({ status: "success" });
     });
-
-    res.send("OK");
 });
 
 app.get("/polling", (req, res, next) => {
@@ -56,14 +55,13 @@ app.get("/streamed-polling", (req, res) => {
         res.write(JSON.stringify(data) + "\n");
     }
     
-    app.es.on("end", () => {
+    app.es.once("end", () => {
         app.es.removeListener("data", onData);
         res.end();
     });
 
     app.es.on("data", onData);
 });
-
 
 app.get("/delay/:delay", (req, res) => {
     setTimeout(() => res.json({}), req.params.delay);
