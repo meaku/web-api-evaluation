@@ -6,21 +6,39 @@ const {
     transportDuration, 
     transportDurationSingleTransport, 
     requestDistribution, 
-    pushDuration 
+    pushDuration,
+    barChart
 } = require("../helpers").chartTemplates;
 
 function trafficXHowMany(config, results) {
-    const { yField, fileName, yLabel, xLabel, title } = config;
+    const { xField, yField, categories, fileName, yLabel, xLabel, title } = config;
 
-    const series = toChartSeries(results, "transport", yField);
-    return trafficSize(title, fileName, [20, 40, 60, 80, 100], series, xLabel, yLabel)
+    const series = toChartSeries(results, xField, yField);
+
+    console.log(series);
+
+    return trafficSize(title, fileName, categories, series, xLabel, yLabel)
 }
 
 exports.trafficXDataSize = function (config, results) {
     return trafficXHowMany({
+        categories: [20, 40, 60, 80, 100],
         yField: "dataSize",
-        yLabel: "# Data Size (kB)",
+        xField: "transport",
+        yLabel: "Data Size (kB)",
         xLabel: "# Items",
+        title: "TCP Data Size",
+        fileName: config.fileName
+    }, results)
+};
+
+exports.trafficXPublishInterval = function (config, results) {
+    return trafficXHowMany({
+        categories: [1, 5, 10, 30],
+        yField: "dataSize",
+        xField: "transport",
+        yLabel: "Data Size (kB)",
+        xLabel: "Publish Interval (s)",
         title: "TCP Data Size",
         fileName: config.fileName
     }, results)
@@ -72,9 +90,30 @@ function requestDistributionXTransport(config, results) {
 function pushDurationXLatency(config, results) {
     const { fileName, categories } = config;
     const series = toChartSeries(results, "transport", "avgDuration");
-    console.log(series);
-    
     return pushDuration("Push Duration", fileName, categories, series);
+}
+
+function uniqueItemsXLatency(config, results) {
+    const { fileName, categories } = config;
+    const series = toChartSeries(results, "transport", "uniqueCount");
+    console.log(series);
+
+    return pushDuration("Unique Items", fileName, categories, series);
+}
+
+function uniqueItemsXPublishInterval(config, results) {
+    const { fileName, categories } = config;
+    const series = toChartSeries(results, "transport", "uniqueCount");
+    console.log(series);
+
+    return barChart({
+        title: false,
+        yLabel: "# Unique Items",
+        xLabel: "Publish Interval (s)",
+        categories,
+        fileName,
+        series
+    });
 }
 
 /**
@@ -105,3 +144,5 @@ function transportDurationPerTransport(config, results) {
 exports.transportDurationPerTransport = transportDurationPerTransport;
 exports.requestDistributionXTransport = requestDistributionXTransport;
 exports.pushDuration = pushDurationXLatency;
+exports.uniqueItemsXLatency = uniqueItemsXLatency;
+exports.uniqueItemsXPublishInterval = uniqueItemsXPublishInterval;

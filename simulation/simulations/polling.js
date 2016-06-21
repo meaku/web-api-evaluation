@@ -24,10 +24,11 @@ const conditions = {
     ]
 };
 
+const pollingIntervals = [1000, 10000, 30000];
 addVariation(conditions, "pattern", ["polling"]);
 addVariation(conditions, "latency", [20, 640]);
-addVariation(conditions, "pollingInterval", [1000, 5000, 10000, 30000]);
-addVariation(conditions, "realtimeInterval", [1000, 5000, 10000, 30000]);
+addVariation(conditions, "pollingInterval", pollingIntervals);
+addVariation(conditions, "realtimeInterval", [1000, 10000, 30000]);
 
 function clientScript(config, callback) {
     start(config)
@@ -45,18 +46,46 @@ function analyze(results) {
     const analyzer = new Analyzer("results_polling", resultDir);
 
     return analyzer.connect()
+        /*
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
         .then(() => {
             const condition = { "condition.pollingInterval": 1000 };
             return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
         })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 10000 };
+            return Promise.all([analyzer.plotUniqueItems(1000, condition), analyzer.plotUniqueItems(5000, condition), analyzer.plotUniqueItems(30000, condition)])
+        })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 1000 };
+            return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
+        })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 10000 };
+            return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
+        })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 30000 };
+            return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
+        })
+        */
+        .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
+        /*
         .then(() => Promise.all([analyzer.tablePollingDurations("HTTP/1.1"), analyzer.tablePollingDurations("HTTP/2")]))
+        .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
         .then(() => analyzer.query({ transport: "HTTP/1.1"}, { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}))
         .then(results => {
             results.forEach(result => {
                 console.log(result.transport, result.latency, result.pollingInterval, result.realtimeInterval, "    ", result.durations.length, "    ", result.dataSize, "      ", result.durations.map(d => d.duration).join(";"));
             })
         })
+        .then(() => analyzer.query({ transport: "HTTP/2"}, { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}))
+        .then(results => {
+            results.forEach(result => {
+                console.log(result.transport, result.latency, result.pollingInterval, result.realtimeInterval, "    ", result.durations.length, "    ", result.dataSize, "      ", result.durations.map(d => d.duration).join(";"));
+            })
+        })
+        */
         .catch((err) => console.error(err.message, err.stack));
 }
 

@@ -48,4 +48,4 @@ server.on("connection", () => console.log("connections: " + ++connections));
 
 //init transportsTable 
 websockets(server, resources, es);
-sse(server, resources, es);
+//sse(server, resources, es);

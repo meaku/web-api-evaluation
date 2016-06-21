@@ -2,6 +2,8 @@
 
 const SSE = require("sse");
 
+
+
 module.exports = function init(server, resources, es) {
     const sse = new SSE(server);
     

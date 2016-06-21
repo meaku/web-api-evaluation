@@ -48,6 +48,10 @@ function analyze(results) {
         .then(() => {
             return Promise.all([analyzer.plotMeanPublishTime(1000), analyzer.plotMeanPublishTime(5000), analyzer.plotMeanPublishTime(10000), analyzer.plotMeanPublishTime(30000)])
         })
+        .then(() => {
+            return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20), analyzer.plotUniqueItemsXPublishInterval(640)])
+        })
+        .then(() => analyzer.plotRTTraffic())
         .catch((err) => console.error(err.message, err.stack));
 }
 

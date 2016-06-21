@@ -120,7 +120,7 @@ exports.toChartSeries = function toChartSeries(results, sName, sValue) {
             series[name].diff.push(result - series[name].values.slice(-1)[0]);
         }
 
-        series[name].values.push(result);
+        series[name].values.push(parseInt(result));
     });
     
     //console.log(inspect(series, { depth: null, colors: true }));

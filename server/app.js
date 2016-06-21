@@ -4,12 +4,15 @@ const fs = require("fs");
 const path = require("path");
 const resources = require("./lib/resources");
 
+const SSE = require("express-sse");
 const express = require("express");
 const app = express();
+const sse = new SSE();
 
 let lastEvent = null;
 
 app.use((req, res, next) => {
+    res.header("Cache-Control", "no-cache");
     res.header("access-control-allow-origin", "*");
     next();
 });
@@ -19,10 +22,13 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get("/sse", sse.init);
+
 app.use(express.static(__dirname + "/public"));
 
 app.use("/start/:interval?", (req, res, next) => {
     function onData(d) {
+        sse.send(d);
         lastEvent = d;
     }
 

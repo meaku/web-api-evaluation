@@ -28,10 +28,6 @@ function getDriver(browser = "chrome") {
 
 let count = 0;
 
-function realtime() {
-    
-}
-
 /**
  * run a single simulation case
  *
@@ -51,20 +47,22 @@ function runSimulation(conditions, script, runner, resultDir) {
 
             driver.get(condition.url);
             driver.manage().timeouts().setScriptTimeout(10000000);
-            console.log("execute script");
+
 
             return driver.executeScript(script)
                 .then(() => console.log("script loaded"))
                 .then(() => sniffer.start(condition.sniffPort || false, trafficFile))
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
-                .then(() => console.log("run", condition))
-                .then(() => runner(driver, condition))
                 .then((results) => {
                     if(condition.realtimeInterval) {
                         console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
-                        return fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
+                        const req = fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
                             .then(res => res.json());
+
+                        console.log("execute script", condition);
+                        runner(driver, condition);
+                        return req;
                     }
                     
                     return results;
@@ -73,7 +71,7 @@ function runSimulation(conditions, script, runner, resultDir) {
                     if(condition.realtimeInterval) {
                         
                         if(result.status !== "success") {
-                            throw new Error("Server responsed with error: " + result.error);
+                            throw new Error("Server responded with error: " + result.error);
                         }
                         
                         return driver.executeScript(function() { return window.results; })

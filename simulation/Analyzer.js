@@ -6,8 +6,11 @@ const {
     transportDurationPerTransport,
     requestDistributionXTransport,
     trafficXDataSize,
+    trafficXPublishInterval,
     trafficXNumberOfPackets,
-    pushDuration
+    pushDuration,
+    uniqueItemsXLatency,
+    uniqueItemsXPublishInterval
 } = require("./plots");
 
 const stats = require("simple-statistics");
@@ -254,6 +257,102 @@ class Analyzer {
                    fileName: `${self.resultDir}/push-duration-${realtimeInterval}.pdf`,
                    categories: [20, 640]
                }, results);
+            });
+    }
+
+    plotUniqueItems(realtimeInterval, condition = {}) {
+        const self = this;
+        const conditions = { "condition.realtimeInterval": realtimeInterval };
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.transport": 1, "condition.latency": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    result.avgDuration = stats.mean(durations);
+                    return result;
+                });
+            })
+            .then(results => {
+                results.forEach(result => {
+                    console.log(result.transport, result.latency, result.realtimeInterval, ":", result.uniqueCount, result.avgDuration, result.dataSize)
+                });
+
+                return uniqueItemsXLatency({
+                    fileName: `${self.resultDir}/uniqueItems-${realtimeInterval}_${condition["condition.pollingInterval"] || ""}.pdf`,
+                    categories: [20, 640]
+                }, results);
+            });
+    }
+
+    plotUniqueItemsXPublishInterval(latency, condition = {}) {
+        const self = this;
+        const conditions = { "condition.latency": latency };
+        let pollInterval = condition["condition.pollingInterval"] || false;
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.realtimeInterval": 1, "condition.transport": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    return result;
+                });
+            })
+            .then(results => {
+                return uniqueItemsXPublishInterval({
+                    fileName: `${self.resultDir}/uniqueItems-interval_${latency}_${pollInterval || ""}.pdf`,
+                    categories: [1, 5, 10, 30]
+                }, results);
+                
+            });
+    }
+
+    /*
+    plotTrafficXPublishInterval(latency, condition = {}) {
+        const self = this;
+        const conditions = { "condition.latency": latency };
+        let pollInterval = condition["condition.pollingInterval"] || false;
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.realtimeInterval": 1, "condition.transport": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    return result;
+                });
+            })
+            .then(results => {
+                return trafficXPublishInterval({
+                    fileName: `${self.resultDir}/traffic-interval_${latency}_${pollInterval || ""}.pdf`,
+                    categories: [1, 5, 10, 30]
+                }, results);
+            });
+    }
+    */
+
+    plotRTTraffic(pollingInterval) {
+        const self = this;
+        const condition = { "condition.latency": 20 };
+
+        if(pollingInterval) {
+            condition["condition.pollingInterval"] = pollingInterval;
+        }
+
+        return this.query(condition, { "condition.realtimeInterval": 1, "condition.transport": 1 })
+            .then(result => {
+                return trafficXPublishInterval(
+                    { fileName: `${self.resultDir}/traffic_${pollingInterval || ""}_dataSize.pdf` },
+                    result
+                )
             });
     }
     

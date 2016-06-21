@@ -106,7 +106,9 @@ function sse(baseUrl, onItem) {
     return new Promise((resolve, reject) => {
         var es = new EventSource("https://" + baseUrl + "/sse");
 
-        es.onerror = (err) => { reject(err); };
+        es.onerror = function (err) {
+            reject(err);
+        };
 
         es.onmessage = function (event) {
             const data = JSON.parse(event.data);
