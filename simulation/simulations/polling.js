@@ -53,6 +53,14 @@ function analyze(results) {
         })
         .then(() => {
             const condition = { "condition.pollingInterval": 10000 };
+            return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
+        })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 30000 };
+            return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
+        })
+        .then(() => {
+            const condition = { "condition.pollingInterval": 30000 };
             return Promise.all([analyzer.plotUniqueItems(1000, condition), analyzer.plotUniqueItems(5000, condition), analyzer.plotUniqueItems(30000, condition)])
         })
         .then(() => {

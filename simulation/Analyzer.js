@@ -231,6 +231,9 @@ class Analyzer {
     plotMeanPublishTime(realtimeInterval, condition = {}) {
         const self = this;
         const conditions = { "condition.realtimeInterval": realtimeInterval };
+        const pollInterval = condition["condition.pollingInterval"] || "";
+
+        console.log(pollInterval);
 
         return this.query(
             Object.assign(conditions, condition),
@@ -254,7 +257,7 @@ class Analyzer {
                 });
 
                return pushDuration({
-                   fileName: `${self.resultDir}/push-duration-${realtimeInterval}.pdf`,
+                   fileName: `${self.resultDir}/push-duration-${realtimeInterval}_${pollInterval}.pdf`,
                    categories: [20, 640]
                }, results);
             });
