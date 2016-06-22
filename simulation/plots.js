@@ -65,6 +65,18 @@ exports.transportDurationsXTransport = function (config, results, series) {
     return transportDuration(title, fileName, series, config.stacked);
 };
 
+exports.barChart = function(config, results, series) {
+    series = series || toChartSeries(
+            results,
+            config.xField,
+            config.yField
+        );
+
+    console.log(series);
+    
+    return barChart(Object.assign(config, { series }));
+};
+
 function durationXLatency(config, results) {
     let { categories, filePath, transport} = config;
     let series = toChartSeries(results, "latency", "duration");
