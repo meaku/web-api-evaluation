@@ -4,7 +4,25 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const fs = require("fs");
 const webdriver = require("selenium-webdriver");
+const chrome = require("selenium-webdriver/chrome");
 const fetch = require("node-fetch");
+
+const chromePreferences = {
+    profile: {
+        content_settings: {
+            exceptions: {
+                notifications: {}
+            }
+        }
+    }
+};
+
+chromePreferences.profile.content_settings.exceptions.notifications["https://192.168.99.100:3002" + ',*'] = {
+    setting: 1
+};
+
+var chromeOptions = new chrome.Options()
+    .setUserPreferences(chromePreferences);
 
 const sequence = require("when/sequence");
 const guard = require("when/guard");
@@ -19,6 +37,7 @@ function getDriver(browser = "chrome") {
     const driver = new webdriver.Builder()
         .usingServer("http://192.168.99.100:4444/wd/hub")
         .forBrowser(browser)
+        .setChromeOptions(chromeOptions)
         .build();
 
     driver.manage().timeouts().setScriptTimeout(5000000);
@@ -49,13 +68,13 @@ function runSimulation(conditions, script, runner, resultDir) {
             driver.manage().timeouts().setScriptTimeout(10000000);
 
 
-            return driver.executeScript(script)
+            return driver.executeScript(script || function() {})
                 .then(() => console.log("script loaded"))
                 .then(() => sniffer.start(condition.sniffPort || false, trafficFile))
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
-                .then((results) => {
-                    if(condition.realtimeInterval) {
+                .then(() => {
+                    if(condition.realtimeInterval && condition.transport !== "WebPush") {
                         console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
                         const req = fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
                             .then(res => res.json());
@@ -64,12 +83,12 @@ function runSimulation(conditions, script, runner, resultDir) {
                         runner(driver, condition);
                         return req;
                     }
-                    
-                    return results;
+
+                    console.log("execute script", condition);
+                    return runner(driver, condition);
                 })
                 .then((result) => {
                     if(condition.realtimeInterval) {
-                        
                         if(result.status !== "success") {
                             throw new Error("Server responded with error: " + result.error);
                         }

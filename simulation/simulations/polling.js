@@ -46,7 +46,6 @@ function analyze(results) {
     const analyzer = new Analyzer("results_polling", resultDir);
 
     return analyzer.connect()
-        /*
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
         .then(() => {
             const condition = { "condition.pollingInterval": 1000 };
@@ -68,9 +67,7 @@ function analyze(results) {
             const condition = { "condition.pollingInterval": 30000 };
             return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
         })
-        */
         .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
-        /*
         .then(() => Promise.all([analyzer.tablePollingDurations("HTTP/1.1"), analyzer.tablePollingDurations("HTTP/2")]))
         .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
         .then(() => analyzer.query({ transport: "HTTP/1.1"}, { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}))
@@ -85,7 +82,6 @@ function analyze(results) {
                 console.log(result.transport, result.latency, result.pollingInterval, result.realtimeInterval, "    ", result.durations.length, "    ", result.dataSize, "      ", result.durations.map(d => d.duration).join(";"));
             })
         })
-        */
         .catch((err) => console.error(err.message, err.stack));
 }
 
