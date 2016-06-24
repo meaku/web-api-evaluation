@@ -49,10 +49,11 @@ navigator.serviceWorker.register('sw.js')
 
         channel.port1.onmessage = function (e) {
             const item =  JSON.parse(e.data);
-            console.log("onmessage", item);
 
             window.results.durations.push({
                 id: item.id,
+                createdAt: item.createdAt,
+                received: Date.now(),
                 duration: Date.now() - item.createdAt
             });
             

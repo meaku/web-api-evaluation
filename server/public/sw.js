@@ -70,6 +70,7 @@ self.addEventListener('push', function(event) {
         tag: 'push'
     }));
 });
+
 self.onmessage = function(e) {
     port = e.ports[0];
 

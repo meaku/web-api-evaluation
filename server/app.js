@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const resources = require("./lib/resources");
+const push = require("./push");
 
 const SSE = require("express-sse");
 const express = require("express");
@@ -26,10 +27,18 @@ app.get("/sse", sse.init);
 
 app.use(express.static(__dirname + "/public"));
 
-app.use("/start/:interval?", (req, res, next) => {
+app.use("/start/:interval?", (req, res) => {
+    const query = req.query;
+    const start = Date.now();
+
     function onData(d) {
         sse.send(d);
         lastEvent = d;
+
+        if (query.endpoint) {
+            console.log("-> " + query.endpoint);
+            push(query, d).catch((err) => console.error("Could not send push message", err));
+        }
     }
 
     app.es.start(req.params.interval);
@@ -37,7 +46,11 @@ app.use("/start/:interval?", (req, res, next) => {
     app.es.once("end", () => {
         app.es.removeListener("data", onData);
         lastEvent = null;
-        res.json({ status: "success" });
+        res.json({
+            status: "success",
+            start,
+            end: Date.now()
+        });
     });
 });
 
@@ -60,7 +73,7 @@ app.get("/streamed-polling", (req, res) => {
     function onData(data) {
         res.write(JSON.stringify(data) + "\n");
     }
-    
+
     app.es.once("end", () => {
         app.es.removeListener("data", onData);
         res.end();

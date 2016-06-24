@@ -143,8 +143,10 @@ function start(config) {
         performance.mark(`received-${item.id}`);
         performance.measure(`since-start-${item.id}`, "start-overall", `received-${item.id}`);
         
-        window.results.durations.push({ 
+        window.results.durations.push({
             id: item.id,
+            createdAt: item.createdAt,
+            received: Date.now(),
             duration: Date.now() - item.createdAt
         });
     }

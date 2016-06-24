@@ -24,11 +24,12 @@ const conditions = {
     ]
 };
 
-const pollingIntervals = [1000, 10000, 30000];
+const pollingIntervals = [1000, 5000, 10000, 30000];
+const publishIntervals = [1000, 5000, 10000];
 addVariation(conditions, "pattern", ["polling"]);
 addVariation(conditions, "latency", [20, 640]);
 addVariation(conditions, "pollingInterval", pollingIntervals);
-addVariation(conditions, "realtimeInterval", [1000, 10000, 30000]);
+addVariation(conditions, "realtimeInterval", publishIntervals);
 
 function clientScript(config, callback) {
     start(config)
@@ -49,19 +50,19 @@ function analyze(results) {
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
         .then(() => {
             const condition = { "condition.pollingInterval": 1000 };
-            return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
         })
         .then(() => {
             const condition = { "condition.pollingInterval": 10000 };
-            return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
         })
         .then(() => {
             const condition = { "condition.pollingInterval": 30000 };
-            return Promise.all([analyzer.plotMeanPublishTime(1000, condition), analyzer.plotMeanPublishTime(5000, condition), analyzer.plotMeanPublishTime(10000, condition), analyzer.plotMeanPublishTime(30000, condition)])
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
         })
         .then(() => {
             const condition = { "condition.pollingInterval": 30000 };
-            return Promise.all([analyzer.plotUniqueItems(1000, condition), analyzer.plotUniqueItems(5000, condition), analyzer.plotUniqueItems(30000, condition)])
+            return Promise.all(publishIntervals.map(interval => analyzer.plotUniqueItems(interval, condition)))
         })
         .then(() => {
             const condition = { "condition.pollingInterval": 1000 };

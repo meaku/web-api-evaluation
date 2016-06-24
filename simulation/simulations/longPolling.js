@@ -24,9 +24,10 @@ const conditions = {
     ]
 };
 
+const publishIntervals = [1000, 5000, 10000];
 addVariation(conditions, "pattern", ["longPolling"]);
 addVariation(conditions, "latency", [20, 640]);
-addVariation(conditions, "realtimeInterval", [1000, 5000, 10000, 30000]);
+addVariation(conditions, "realtimeInterval", publishIntervals);
 
 function clientScript(config, callback) {
     start(config)
@@ -46,7 +47,7 @@ function analyze(results) {
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
         .then(() => {
-            return Promise.all([analyzer.plotMeanPublishTime(1000), analyzer.plotMeanPublishTime(5000), analyzer.plotMeanPublishTime(10000), analyzer.plotMeanPublishTime(30000)])
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval)))
         })
         .then(() => {
             return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20), analyzer.plotUniqueItemsXPublishInterval(640)])

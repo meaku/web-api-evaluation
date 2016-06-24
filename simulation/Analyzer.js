@@ -310,7 +310,7 @@ class Analyzer {
             .then(results => {
                 return uniqueItemsXPublishInterval({
                     fileName: `${self.resultDir}/uniqueItems-interval_${latency}_${pollInterval || ""}.pdf`,
-                    categories: [1, 5, 10, 30]
+                    categories: [1, 5, 10]
                 }, results);
                 
             });

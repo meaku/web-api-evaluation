@@ -66,14 +66,14 @@ function runSimulation(conditions, script, runner, resultDir) {
 
             driver.get(condition.url);
             driver.manage().timeouts().setScriptTimeout(10000000);
-
-
+            
             return driver.executeScript(script || function() {})
                 .then(() => console.log("script loaded"))
                 .then(() => sniffer.start(condition.sniffPort || false, trafficFile))
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
                 .then(() => {
+                    console.log("Receieved endpoint=", condition.endpoint);
                     if(condition.realtimeInterval && condition.transport !== "WebPush") {
                         console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
                         const req = fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
@@ -94,6 +94,12 @@ function runSimulation(conditions, script, runner, resultDir) {
                         }
                         
                         return driver.executeScript(function() { return window.results; })
+                            .then((results) => {
+                                console.log("before", results.durations.length);
+                                results.durations = results.durations.filter((d) => d.received <= result.end);
+                                console.log("after", results.durations.length);
+                                return results;
+                            })
                     }
                     return result;
                 })
