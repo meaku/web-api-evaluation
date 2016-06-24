@@ -40,7 +40,7 @@ function getSeries(transport, conditions, xValue) {
         fetchDataForType(`Batch`, "results_batch", transport, conditions, xValue),
         fetchDataForType(`Stream`, "results_stream", transport, conditions, xValue)
     ])
-        .then((results) => [...results[0], ...results[1], ...results[2]])
+        .then((results) => [...results[0], ...results[1], ...results[2], ...results[3]])
 }
 
 function plotDurationsXType(transport, howMany, name, fileName) {
@@ -110,8 +110,6 @@ analyzer.connect()
 
                 return getSeries(transport, { "condition.howMany": howMany }, "condition.latency")
                     .then(results => {
-                        console.log(results);
-
                         return barChart({
                             name: `Traffic: ${transport}`,
                             fileName: `${resultDir}/ttfi_${transport.replace("/", "-")}_${howMany}.pdf`,

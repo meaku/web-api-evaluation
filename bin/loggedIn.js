@@ -11,7 +11,7 @@ const formatRow = helpers.formatRow([0]);
 const { filterByApi, filterByDomain, findByValue, analyzeRequestDestinations, texChars, preProcessRequests, addStatsRow } = helpers;
 
 const transportsTable = new Table({
-    head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "SSE"],
+    head: ["Domain", "HTTP/2", "WebSockets", "Polling", "Long Polling", "Streamed Polling", "SSE"],
     caption: "Pervasiveness of Browser Networking APIs: Web Apps",
     label: "table:evaluation-transports-webapps"
     //colWidths: [20, 20, 20, 20, 20, 20]
@@ -32,17 +32,19 @@ const requestsTbl = new Table({
 });
 
 const requestDestinationsTable = new Table({
-    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"]
     //colWidths: [35, 20, 20, 20, 20]
 });
 
 const requestDistCountTable = new Table({
     head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    caption: "Request Distribution: Web Apps",
+    label: "table:evaluation-request-distribution-webapps"
     //colWidths: [35, 20, 20, 20, 20]
 });
 
 const requestDistDomainsTable = new Table({
-    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"],
+    head: ["Domain", "Overall", "Same Domain", "Overall: API", "Same Domain: API"]
     //colWidths: [35, 20, 20, 20, 20]
 });
 
@@ -107,6 +109,7 @@ Object.keys(results)
             result.features.webSockets !== false,
             result.features.polling || false,
             result.features.longPolling || false,
+            result.features.streamedPolling || false,
             false
         ]));
 
@@ -155,18 +158,19 @@ Object.keys(results)
     });
 
 //Uncomment for copy&waste tables
-/*
-transportsTable.push(addStatsRow(transportsTable).map(stats => stats.percent));
-offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
-offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent));
-requestsTbl.push(addStatsRow(requestsTbl).map(stats => stats.mean));
-requestDistCountTable.push(addStatsRow(requestDistCountTable).map(stats => stats.mean));
-requestDistDomainsTable.push(addStatsRow(requestDistDomainsTable).map(stats => stats.mean));
-*/
+///*
+transportsTable.push(addStatsRow(transportsTable).map(stats => stats.percent.toFixed()));
+offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent.toFixed()));
+offlineTbl.push(addStatsRow(offlineTbl).map(stats => stats.percent.toFixed()));
+requestsTbl.push(addStatsRow(requestsTbl).map(stats => Math.round(stats.mean)));
+requestDistCountTable.push(addStatsRow(requestDistCountTable).map(stats => Math.round(stats.mean)));
+requestDistDomainsTable.push(addStatsRow(requestDistDomainsTable).map(stats => Math.round(stats.mean)));
+requestDistDomainsTable.push(addStatsRow(requestDistDomainsTable).map(stats => Math.round(stats.percent).toFixed()));
+//*/
 
 console.log(transportsTable.toLatex());
 console.log(offlineTbl.toLatex());
 console.log(requestsTbl.toLatex());
-console.log(requestDestinationsTable.toLatex());
+//console.log(requestDestinationsTable.toLatex());
 console.log(requestDistCountTable.toLatex());
-console.log(requestDistDomainsTable.toLatex());
+//console.log(requestDistDomainsTable.toLatex());

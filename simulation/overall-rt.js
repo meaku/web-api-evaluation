@@ -10,15 +10,17 @@ const stats = require("simple-statistics");
 
 const analyzer = new Analyzer("results_batch", __dirname);
 
-function fetchDataForType(type, collection, transport, conditions, xValue) {
-    const condition = Object.assign({ "condition.transport": transport }, conditions);
-    const sort = {
-        "transport": 1
-    };
+function fetchDataForType(type, collection, transport, conditions = {}, xValue) {
+    const sort = {};
+
+    if (transport) {
+        conditions["condition.transport"] = transport;
+        sort.transport = 1;
+    }
 
     sort[xValue] = 1;
 
-    return analyzer.query(condition, sort, collection)
+    return analyzer.query(conditions, sort, collection)
         .then(res => {
             return res.map(result => {
                 result.type = type;
@@ -45,6 +47,18 @@ function getSeries(transport, conditions, xValue) {
         .then((results) => [...results[0], ...results[1], ...results[2], ...results[3]])
 }
 
+function getSeriesNonHTTP(transport, conditions, xValue) {
+    return Promise.all([
+        fetchDataForType(`WebSocket`, "results_websocket", transport, conditions, xValue),
+        fetchDataForType(`WebPush`, "results_webpush", transport, conditions, xValue)
+    ])
+        .then((results) => [...results[0], ...results[1]])
+        .then(results => results.map(r => {
+            r.type = r.transport;
+            return r;
+        }))
+}
+
 const variations = [
     { transport: "HTTP/2", latency: 20 },
     { transport: "HTTP/2", latency: 640 },
@@ -52,7 +66,56 @@ const variations = [
     { transport: "HTTP/1.1", latency: 640 }
 ];
 
+const nonHTTPVariations = [
+    { latency: 20 },
+    { latency: 640 }
+];
+
 analyzer.connect()
+    .then(() => {
+        return Promise.all(
+            nonHTTPVariations.map(config => {
+                const { latency } = config;
+                const name = `Mean Publish Time: Non-HTTP, ${latency}`;
+                const fileName = `${resultDir}/mpt_nonhttp_${latency}.pdf`;
+
+                return getSeriesNonHTTP(null, { "condition.latency": latency }, "condition.realtimeInterval")
+                    .then((results) => {
+                        return barChart({
+                            name,
+                            fileName,
+                            xField: "type",
+                            xLabel: "Publish Interval (s)",
+                            yLabel: "Mean Publish Time (ms)",
+                            yField: "avgDuration",
+                            categories: [1, 5, 10, 30]
+                        }, results);
+                    });
+            })
+        );
+    })
+    .then(() => {
+        return Promise.all(
+            nonHTTPVariations.map(config => {
+                const { latency } = config;
+                const name = `Reliability: Non-HTTP, ${latency}`;
+                const fileName = `${resultDir}/unique_items_nonhttp_${latency}.pdf`;
+
+                return getSeriesNonHTTP(false, { "condition.latency": latency }, "condition.realtimeInterval")
+                    .then((results) => {
+                        return barChart({
+                            name,
+                            fileName,
+                            xField: "type",
+                            xLabel: "Publish Interval (s)",
+                            yLabel: "# Unique Items",
+                            yField: "uniqueCount",
+                            categories: [1, 5, 10, 30]
+                        }, results);
+                    });
+            })
+        );
+    })
     .then(() => {
         return Promise.all(
             variations.map(config => {
@@ -79,7 +142,7 @@ analyzer.connect()
         return Promise.all(
             variations.map(config => {
                 const { transport, latency } = config;
-                const name = `Mean Publish Time: ${transport}, ${latency}`;
+                const name = `Reliability: ${transport}, ${latency}`;
                 const fileName = `${resultDir}/unique_items_${transport.replace("/", "-")}_${latency}.pdf`;
 
                 return getSeries(transport, { "condition.latency": latency }, "condition.realtimeInterval")
@@ -115,6 +178,7 @@ analyzer.connect()
             })
         )
     })
+
     /*
      .then(() => {
      return Promise.all(
