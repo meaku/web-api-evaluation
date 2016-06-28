@@ -17,7 +17,10 @@ const chromePreferences = {
     }
 };
 
-chromePreferences.profile.content_settings.exceptions.notifications["https://192.168.99.100:3002" + ',*'] = {
+chromePreferences.profile.content_settings.exceptions.notifications["https://simulation-server:3002" + ',*'] = {
+    setting: 1
+};
+chromePreferences.profile.content_settings.exceptions.notifications["https://simulation-server:3001" + ',*'] = {
     setting: 1
 };
 
@@ -35,7 +38,7 @@ const limiter = new NetworkLimiter();
 function getDriver(browser = "chrome") {
     //global settings
     const driver = new webdriver.Builder()
-        .usingServer("http://192.168.99.100:4444/wd/hub")
+        .usingServer("http://0.0.0.0:4444/wd/hub")
         .forBrowser(browser)
         .setChromeOptions(chromeOptions)
         .build();
@@ -73,10 +76,12 @@ function runSimulation(conditions, script, runner, resultDir) {
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
                 .then(() => {
-                    console.log("Receieved endpoint=", condition.endpoint);
+                    const [host, port] = condition.baseUrl.split(":");
+                    const serverHost = `0.0.0.0:${port}`;
+                    
                     if(condition.realtimeInterval && condition.transport !== "WebPush") {
-                        console.log(`GET https://${condition.baseUrl}/start/${condition.realtimeInterval}`);
-                        const req = fetch(`https://${condition.baseUrl}/start/${condition.realtimeInterval}`)
+                        console.log(`GET https://${serverHost}/start/${condition.realtimeInterval}`);
+                        const req = fetch(`https://${serverHost}/start/${condition.realtimeInterval}`)
                             .then(res => res.json());
 
                         console.log("execute script", condition);

@@ -9,7 +9,7 @@ const websockets = require("./lib/websocket");
 const sse = require("./lib/sse");
 
 const resources = require("./lib/resources");
-const EventStream = require("./lib/EventStream");
+const EventStream = require("./lib/EventStream.js");
 
 const app = require("./app");
 const es = new EventStream();

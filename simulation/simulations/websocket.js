@@ -12,7 +12,7 @@ const conditions = {
         {
             transport: "WebSocket",
             baseUrl: hosts.h1,
-            url: "https://192.168.99.100:3001",
+            url: "https://simulation-server:3001",
             sniffPort: 3011
         }
     ]

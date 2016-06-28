@@ -14,7 +14,7 @@ const conditions = {
         {
             transport: "WebPush",
             baseUrl: hosts.h1,
-            url: "https://192.168.99.100:3002/webpush.html",
+            url: "https://simulation-server:3001/webpush.html",
             sniffPort: 3002
         }
     ]
@@ -37,7 +37,9 @@ function runner(driver, config) {
         })
         .then(subscription => {
             subscription = JSON.parse(subscription);
-            return fetch(`https://${config.baseUrl}/start/${config.realtimeInterval}/?${qs.stringify(subscription)}`)
+            const [host, port] = config.baseUrl.split(":");
+            const serverHost = `0.0.0.0:${port}`;
+            return fetch(`https://${serverHost}/start/${config.realtimeInterval}/?${qs.stringify(subscription)}`)
                 .then(res => res.json());
         })
 }

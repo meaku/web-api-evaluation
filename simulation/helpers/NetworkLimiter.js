@@ -7,7 +7,7 @@ function log() {
 }
 
 class NetworkLimiter {
-    constructor(ssh = "application@192.168.99.100:22222") {
+    constructor(ssh = "application@localhost:22222") {
         this.connection = sequest.connect(ssh);
     }
 
@@ -33,11 +33,11 @@ class NetworkLimiter {
         log(`Limit latency: ${latency}`);
 
         return this.reset()
-            .then(() => this._exec(`sudo tc qdisc add dev eth0 root netem delay ${latency}`));
+            .then(() => this._exec(`sudo tc qdisc add dev eth1 root netem delay ${latency}`));
     }
 
     reset() {
-        return this._exec("sudo tc qdisc del dev eth0 root")
+        return this._exec("sudo tc qdisc del dev eth1 root")
             .catch(err => {
                 //ignore: there are no existing rules defined for qdisc
                 return Promise.resolve();

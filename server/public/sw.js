@@ -78,4 +78,4 @@ self.onmessage = function(e) {
         // Push message arrived before the page finished loading.
         port.postMessage(pushMessage);
     }
-}
+};

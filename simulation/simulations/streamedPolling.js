@@ -12,12 +12,12 @@ const conditions = {
         {
             transport: "HTTP/1.1",
             baseUrl: hosts.h1,
-            url: "https://192.168.99.100:3001",
+            url: "https://simulation-server:3001",
             sniffPort: 3011
         },
         {
             transport: "HTTP/2",
-            url: "https://192.168.99.100:3001",
+            url: "https://simulation-server:3001",
             baseUrl: hosts.h2,
             sniffPort: 3022
         }

@@ -32,8 +32,8 @@ exports.defaultNetworks = {
 };
 
 exports.hosts = {
-    h1: "192.168.99.100:3011",
-    h2: "192.168.99.100:3022"
+    h1: "simulation-server:3011",
+    h2: "simulation-server:3022"
 };
 
 exports.resultsDir = path.resolve(__dirname, "../results/simulation");
