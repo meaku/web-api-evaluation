@@ -10,24 +10,26 @@ const script = loadScript("realtime");
 const conditions = {
     "transports": [
         {
+            transport: "HTTP/2",
+            url: "https://simulation-server:3002",
+            baseUrl: hosts.h2,
+            sniffPort: 3022
+        },
+        {
             transport: "HTTP/1.1",
             baseUrl: hosts.h1,
             url: "https://simulation-server:3001",
             sniffPort: 3011
-        },
-        {
-            transport: "HTTP/2",
-            url: "https://simulation-server:3001",
-            baseUrl: hosts.h2,
-            sniffPort: 3022
         }
     ]
 };
 
 
-const publishIntervals = [1000, 5000, 10000];
+//const publishIntervals = [1000, 5000, 10000];
+const publishIntervals = [1000];
 addVariation(conditions, "pattern", ["sse"]);
 addVariation(conditions, "latency", [20, 640]);
+//addVariation(conditions, "latency", [640]);
 addVariation(conditions, "realtimeInterval", publishIntervals);
 
 function clientScript(config, callback) {

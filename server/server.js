@@ -6,7 +6,6 @@ const spdy = require("spdy");
 const argv = require("yargs").argv;
 
 const websockets = require("./lib/websocket");
-const sse = require("./lib/sse");
 
 const resources = require("./lib/resources");
 const EventStream = require("./lib/EventStream.js");
@@ -48,4 +47,3 @@ server.on("connection", () => console.log("connections: " + ++connections));
 
 //init transportsTable 
 websockets(server, resources, es);
-//sse(server, resources, es);

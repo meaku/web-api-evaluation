@@ -7,7 +7,7 @@ function log() {
 }
 
 class NetworkLimiter {
-    constructor(ssh = "application@localhost:22222") {
+    constructor(ssh = "application@ec2-54-93-72-83.eu-central-1.compute.amazonaws.com:22222") {
         this.connection = sequest.connect(ssh);
     }
 

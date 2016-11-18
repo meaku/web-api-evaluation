@@ -73,16 +73,20 @@ class Analyzer {
      *
      * @returns {*|Promise}
      */
-    plotDurations() {
+    plotDurations({ yMax }) {
         const self = this;
 
         function plot(howMany) {
             return self.query({ "condition.howMany": howMany }, { "transport": 1, "condition.latency": 1 })
-                .then((result) => {
+                .then((results) => {
                     return transportDurationsXTransport({
-                        fileName: `${self.resultDir}/durations_${howMany}.pdf`,
-                        title: `Load Time: ${howMany} Items`
-                    }, result)
+                        config: {
+                            fileName: `${self.resultDir}/durations_${howMany}.pdf`,
+                            title: `Load Time: ${howMany} Items`,
+                        },
+                        yMax,
+                        results
+                    })
                 });
         }
 
@@ -216,9 +220,12 @@ class Analyzer {
                     });
 
                     return transportDurationsXTransport({
-                        fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
-                        title: `Time to first item: ${howMany} Items`
-                    }, result)
+                        config: {
+                            fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
+                            title: `Time to first item: ${howMany} Items`
+                        },
+                        results: result
+                    })
                 });
         }
 
@@ -232,8 +239,6 @@ class Analyzer {
         const self = this;
         const conditions = { "condition.realtimeInterval": realtimeInterval };
         const pollInterval = condition["condition.pollingInterval"] || "";
-
-        console.log(pollInterval);
 
         return this.query(
             Object.assign(conditions, condition),

@@ -24,7 +24,12 @@ chromePreferences.profile.content_settings.exceptions.notifications["https://sim
     setting: 1
 };
 
-var chromeOptions = new chrome.Options()
+const simulationHost = "localhost";
+//const simulationHost = "ec2-54-93-72-83.eu-central-1.compute.amazonaws.com";
+
+const chromeOptions = new chrome.Options({
+        args: "--enable-benchmarking"
+    })
     .setUserPreferences(chromePreferences);
 
 const sequence = require("when/sequence");
@@ -33,12 +38,12 @@ const guard = require("when/guard");
 const { NetworkLimiter, TrafficSniffer, pcap, delay } = require("./helpers");
 
 //limiter is reused
-const limiter = new NetworkLimiter();
+const limiter = new NetworkLimiter(`application@${simulationHost}:22222`);
 
 function getDriver(browser = "chrome") {
     //global settings
     const driver = new webdriver.Builder()
-        .usingServer("http://0.0.0.0:4444/wd/hub")
+        .usingServer(`http://${simulationHost}:4444/wd/hub`)
         .forBrowser(browser)
         .setChromeOptions(chromeOptions)
         .build();
@@ -49,6 +54,7 @@ function getDriver(browser = "chrome") {
 }
 
 let count = 0;
+
 
 /**
  * run a single simulation case
@@ -64,7 +70,7 @@ function runSimulation(conditions, script, runner, resultDir) {
 
         return function run() {
             const driver = getDriver(condition.browser);
-            const sniffer = new TrafficSniffer();
+            const sniffer = new TrafficSniffer(`application@${simulationHost}:22222`);
             const trafficFile = `${resultDir}/traffic_${count++}.pcap`;
 
             driver.get(condition.url);
@@ -76,16 +82,17 @@ function runSimulation(conditions, script, runner, resultDir) {
                 .then(() => limiter.throttle(condition.latency || false))
                 .then(() => delay(2000)) //ensure sniffer is running
                 .then(() => {
+                    //get port of simulation-server and request externally to start event emitting
                     const [host, port] = condition.baseUrl.split(":");
-                    const serverHost = `0.0.0.0:${port}`;
+                    const simulationServer = `${simulationHost}:${port}`;
                     
                     if(condition.realtimeInterval && condition.transport !== "WebPush") {
-                        console.log(`GET https://${serverHost}/start/${condition.realtimeInterval}`);
-                        const req = fetch(`https://${serverHost}/start/${condition.realtimeInterval}`)
-                            .then(res => res.json());
-
                         console.log("execute script", condition);
                         runner(driver, condition);
+
+                        console.log(`GET https://${simulationServer}/start/${condition.realtimeInterval}`);
+                        const req = fetch(`https://${simulationServer}/start/${condition.realtimeInterval}`)
+                            .then(res => res.json());
                         return req;
                     }
 
@@ -100,6 +107,7 @@ function runSimulation(conditions, script, runner, resultDir) {
                         
                         return driver.executeScript(function() { return window.results; })
                             .then((results) => {
+                                console.log(results.durations);
                                 console.log("before", results.durations.length);
                                 results.durations = results.durations.filter((d) => d.received <= result.end);
                                 console.log("after", results.durations.length);

@@ -1,5 +1,19 @@
 "use strict";
 
+/**
+ * TODO adjust scale
+ * yAxis: {
+            title: {
+                text: 'Temperature'
+            },
+            id: 'my_y',
+            lineWidth: 2,
+            lineColor: '#F33',
+            min:0,
+            max:10
+        },
+ */
+
 const { toChartSeries, swapSeries, calculateDistribution } = require("./helpers");
 const { 
     trafficSize, 
@@ -54,7 +68,7 @@ exports.trafficXNumberOfPackets = function (config, results) {
     }, results)
 };
 
-exports.transportDurationsXTransport = function (config, results, series) {
+exports.transportDurationsXTransport = function ({ config, results, series, yMax }) {
     const { fileName, title } = config;
     series = series || toChartSeries(
         results,
@@ -62,7 +76,7 @@ exports.transportDurationsXTransport = function (config, results, series) {
         "duration"
     );
 
-    return transportDuration(title, fileName, series, config.stacked);
+    return transportDuration({ title, fileName, series, stacked: config.stacked, yMax });
 };
 
 exports.barChart = function(config, results, series) {
@@ -71,8 +85,6 @@ exports.barChart = function(config, results, series) {
             config.xField,
             config.yField
         );
-
-    console.log(series);
     
     return barChart(Object.assign(config, { series }));
 };

@@ -102,9 +102,27 @@ function ws(baseUrl, onItem) {
     });
 }
 
+function sock(baseUrl, onItem) {
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket("wss://" + baseUrl);
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            onItem(data);
+
+            if (data.id === 10) {
+                resolve();
+            }
+        };
+
+        ws.onerror = reject;
+    });
+}
+
 function sse(baseUrl, onItem) {
     return new Promise((resolve, reject) => {
         var es = new EventSource("https://" + baseUrl + "/sse");
+        const items = [];
 
         es.onerror = function (err) {
             reject(err);
@@ -112,10 +130,11 @@ function sse(baseUrl, onItem) {
 
         es.onmessage = function (event) {
             const data = JSON.parse(event.data);
+            items.push(data);
             onItem(data);
 
             if (data.id === 10) {
-                resolve();
+                resolve(items);
             }
         };
     });
@@ -131,6 +150,7 @@ const patterns = {
 
 function start(config) {
     const pattern = config.pattern || "sse";
+    let requestedAt = Date.now();
 
     window.results = {
         durations: []
@@ -139,6 +159,7 @@ function start(config) {
     performance.mark("start-overall");
 
     function onItem(item) {
+        let received = Date.now();
         console.log(`${pattern} - ${item.id} ${Date.now() - item.createdAt}`);
         performance.mark(`received-${item.id}`);
         performance.measure(`since-start-${item.id}`, "start-overall", `received-${item.id}`);
@@ -146,9 +167,13 @@ function start(config) {
         window.results.durations.push({
             id: item.id,
             createdAt: item.createdAt,
-            received: Date.now(),
-            duration: Date.now() - item.createdAt
+            requestedAt,
+            durationClient: received - requestedAt,
+            received,
+            duration: received - item.createdAt
         });
+
+        requestedAt = Date.now();
     }
 
     return patterns[pattern](config.baseUrl || window.location.host, onItem, config.pollingInterval)

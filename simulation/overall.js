@@ -15,20 +15,20 @@ function fetchDataForType(type, collection, transport, conditions, xValue) {
     const sort = {
         "transport": 1
     };
-
+    
     sort[xValue] = 1;
-
+    
     return analyzer.query(condition, sort, collection)
         .then(res => {
             return res.map(r => {
                 let ttds = r.measures
                     .filter(m => m.name.indexOf("ttd") !== -1)
                     .map(m => m.duration);
-
+                
                 r.type = type;
                 r.min = stats.min(ttds);
                 r.max = stats.max(ttds);
-
+                
                 return r;
             });
         })
@@ -36,25 +36,28 @@ function fetchDataForType(type, collection, transport, conditions, xValue) {
 
 function getSeries(transport, conditions, xValue) {
     return Promise.all([
-        fetchDataForType(`Multiple`, "results_multiple", transport, conditions, xValue),
-        fetchDataForType(`Batch`, "results_batch", transport, conditions, xValue),
-        fetchDataForType(`Stream`, "results_stream", transport, conditions, xValue)
-    ])
-        .then((results) => [...results[0], ...results[1], ...results[2], ...results[3]])
+            fetchDataForType(`Multiple`, "results_multiple", transport, conditions, xValue),
+            fetchDataForType(`Batch`, "results_batch", transport, conditions, xValue),
+            fetchDataForType(`Stream`, "results_stream", transport, conditions, xValue)
+        ])
+        .then((results) => [...results[0], ...results[1], ...results[2]])
 }
 
 function plotDurationsXType(transport, howMany, name, fileName) {
     return getSeries(transport, { "condition.howMany": howMany }, "condition.latency")
         .then((results) => {
-            const res = toChartSeries(results, "type", "duration");
+            const series = toChartSeries(results, "type", "duration");
             return transportDurationsXTransport({
-                name,
-                fileName,
-                stacked: false
-            }, {}, res);
+                config: {
+                    name,
+                    fileName,
+                    stacked: false
+                },
+                yMax: howMany == 100 ? 12500 : 5000,
+                series: series
+            });
         });
 }
-
 
 const variations = [
     { transport: "HTTP/2", howMany: 20 },
@@ -79,7 +82,7 @@ analyzer.connect()
                 const name = `Duration: ${transport}, ${howMany}`;
                 const fileName = `${resultDir}/${transport.replace("/", "-")}_${howMany}.pdf`;
                 return plotDurationsXType(transport, howMany, name, fileName);
-
+                
             })
         );
     })
@@ -89,7 +92,7 @@ analyzer.connect()
                 return getSeries(transport, { "condition.latency": 80 }, "condition.howMany")
                     .then(results => {
                         console.log(results);
-
+                        
                         return barChart({
                             name: `Traffic: ${transport}`,
                             fileName: `${resultDir}/traffic_${transport.replace("/", "-")}.pdf`,
@@ -97,6 +100,7 @@ analyzer.connect()
                             xLabel: "# Items",
                             yLabel: "Data Size (kB)",
                             yField: "dataSize",
+                            yMax: 250,
                             categories: [20, 40, 60, 80, 100]
                         }, results);
                     });
@@ -106,8 +110,8 @@ analyzer.connect()
     .then(() => {
         return Promise.all(
             variations.map(config => {
-                let { howMany, transport} = config;
-
+                let { howMany, transport } = config;
+                
                 return getSeries(transport, { "condition.howMany": howMany }, "condition.latency")
                     .then(results => {
                         return barChart({
@@ -117,6 +121,7 @@ analyzer.connect()
                             xLabel: "Latency (ms)",
                             yLabel: "TTFI (ms)",
                             yField: "min",
+                            yMax: howMany === 20 ? 5000 : 6000,
                             categories: [20, 40, 80, 160, 320, 640]
                         }, results);
                     });
@@ -125,20 +130,21 @@ analyzer.connect()
     })
     .then(() => {
         return Promise.all(mergeVariations.map(config => getSeries(config.transport, config.howMany)))
-            .then((results) => {
-
-            })
             .then(results => {
                 const series = toChartSeries(results, "type", "duration");
-
+                
                 //with stacking
                 return transportDurationsXTransport({
-                    name: "Merged",
-                    fileName: resultDir + "/merged.pdf",
-                    stacked: false
-                }, {}, _.flatten(series))
+                    config: {
+                        name: "Merged",
+                        fileName: resultDir + "/merged.pdf",
+                        stacked: false
+                    },
+                    series: null,
+                    results: _.flatten(series)
+                })
             })
-
+        
     })
     .catch((err) => console.error(err.message, err.stack));
 

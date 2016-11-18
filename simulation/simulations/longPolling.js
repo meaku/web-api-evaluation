@@ -17,7 +17,7 @@ const conditions = {
         },
         {
             transport: "HTTP/2",
-            url: "https://simulation-server:3001",
+            url: "https://simulation-server:3002",
             baseUrl: hosts.h2,
             sniffPort: 3022
         }

@@ -58,7 +58,7 @@ function analyze(results) {
         .then(() => analyzer.plotTTFI())
         .then(() => {
             return Promise.all([
-                analyzer.plotDurations(),
+                analyzer.plotDurations({ yMax: 6000 }),
                 analyzer.plotTraffic(),
                 analyzer.plotDurationPerTransport()
             ]);

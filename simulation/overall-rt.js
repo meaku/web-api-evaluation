@@ -41,10 +41,10 @@ function getSeries(transport, conditions, xValue) {
     return Promise.all([
         fetchDataForType(`Long Polling`, "results_long_polling", transport, conditions, xValue),
         fetchDataForType(`Streamed Polling`, "results_streamed_polling", transport, conditions, xValue),
-        fetchDataForType(`SSE`, "results_sse", transport, conditions, xValue),
+        //fetchDataForType(`SSE`, "results_sse", transport, conditions, xValue),
         fetchDataForType(`Polling (1s)`, "results_polling", transport, Object.assign(conditions, { "condition.pollingInterval": 1000 }), xValue)
     ])
-        .then((results) => [...results[0], ...results[1], ...results[2], ...results[3]])
+        .then((results) => [...results[0], ...results[1], ...results[2]])
 }
 
 function getSeriesNonHTTP(transport, conditions, xValue) {

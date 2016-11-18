@@ -124,11 +124,12 @@ exports.toChartSeries = function toChartSeries(results, sName, sValue) {
     });
     
     //console.log(inspect(series, { depth: null, colors: true }));
-    return Object.keys(series).map(key => {
-        return {
-            name: key,
-            data: series[key].values
-        }
+    return Object.keys(series)
+        .map(key => {
+            return {
+                name: key,
+                data: series[key].values
+            };
     });
 };
 

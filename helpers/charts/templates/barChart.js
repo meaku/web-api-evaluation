@@ -7,7 +7,7 @@ const { chart } = require("../../");
  * @param config
  */
 module.exports = function(config) {
-    const { title, categories, stacking, series, fileName, yLabel, xLabel } = config;
+    const { title, categories, stacking, series, fileName, yLabel, xLabel, xMax, yMax } = config;
 
     return chart({
         chart: {
@@ -27,13 +27,15 @@ module.exports = function(config) {
             title: {
                 text: xLabel
             },
-            categories
+            categories,
+            max: xMax
         },
         yAxis: {
             //allowDecimals: false,
             title: {
                 text: yLabel
-            }
+            },
+            max: yMax
         },
         plotOptions: {
             series: {

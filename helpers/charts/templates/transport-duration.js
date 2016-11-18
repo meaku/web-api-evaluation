@@ -2,7 +2,7 @@
 
 const { chart } = require("../../");
 
-module.exports = function(title, fileName, series, stacking = false) {
+module.exports = function({ title, fileName, series, stacking = false, yMax}) {
    
     return chart({
         chart: {
@@ -28,7 +28,8 @@ module.exports = function(title, fileName, series, stacking = false) {
             //allowDecimals: false,
             title: {
                 text: "Load Time (ms)"
-            }
+            },
+            max: yMax
         },
         plotOptions: {
             series: {

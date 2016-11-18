@@ -6,14 +6,16 @@
 
 ### Selenium
 
-docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 -p 22222:22222 \
-        --cap-add=NET_ADMIN \
-        --cap-add net_raw \
-        -e SSHD=true \
-        -e SSH_AUTH_KEYS="$(cat ~/.ssh/id_rsa.pub)" \
-        -v /dev/shm:/dev/shm -e VNC_PASSWORD=hola \
-        -e MAX_INSTANCES=20 -e MAX_SESSIONS=20 \
-        elgalu/selenium:2.53.0o
+
+docker run --rm -ti --name=simulation-client -p 4444:24444 -p 5900:25900 -p 22222:22222 \
+    --cap-add=NET_ADMIN \
+    --cap-add net_raw \
+    -e SCREEN_WIDTH=1920 -e SCREEN_HEIGHT=1200 \
+    -e SSHD=true \
+    -e SSH_AUTH_KEYS="$(cat ~/.ssh/id_rsa.pub)" \
+    -v /dev/shm:/dev/shm -e VNC_PASSWORD=hola \
+    -e MAX_INSTANCES=20 -e MAX_SESSIONS=20 \
+    elgalu/selenium
         
 ### Node.js Server 
 
@@ -55,12 +57,18 @@ sudo apt-get install tshark
 
 # http://ubuntuforums.org/showthread.php?t=2039978
 
-sudo setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap
+sudo chgrp application /usr/bin/dumpcap  (?)
+sudo setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap (?)
 sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' /usr/bin/dumpcap
 
-sudo chgrp application /usr/bin/dumpcap  
 
 tshark -i eth0 -o "ssl.keys_list: any,3001,http,/home/application/localhost.key" -f "tcp port 3001" -F pcap
+
+# docker network
+
+docker network create sim
+docker network connect sim simulation-client
+docker network connect sim simulation-server
 
 
 ## h1
