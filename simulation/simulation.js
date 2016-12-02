@@ -74,7 +74,7 @@ function runSimulation(conditions, script, runner, resultDir) {
             const trafficFile = `${resultDir}/traffic_${count++}.pcap`;
 
             driver.get(condition.url);
-            driver.manage().timeouts().setScriptTimeout(10000000);
+            driver.manage().timeouts().setScriptTimeout(100000000);
             
             return driver.executeScript(script || function() {})
                 .then(() => console.log("script loaded"))

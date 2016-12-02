@@ -1,6 +1,4 @@
 "use strict";
-
-const { toChartSeries, swapSeries } = require("./helpers");
 const path = require("path");
 const { barChart } = require("./plots");
 const Analyzer = require("./Analyzer");
@@ -41,7 +39,6 @@ function getSeries(transport, conditions, xValue) {
     return Promise.all([
         fetchDataForType(`Long Polling`, "results_long_polling", transport, conditions, xValue),
         fetchDataForType(`Streamed Polling`, "results_streamed_polling", transport, conditions, xValue),
-        //fetchDataForType(`SSE`, "results_sse", transport, conditions, xValue),
         fetchDataForType(`Polling (1s)`, "results_polling", transport, Object.assign(conditions, { "condition.pollingInterval": 1000 }), xValue)
     ])
         .then((results) => [...results[0], ...results[1], ...results[2]])
@@ -178,30 +175,9 @@ analyzer.connect()
             })
         )
     })
-
-    /*
-     .then(() => {
-     return Promise.all(
-     variations.map(config => {
-     let { howMany, transport } = config;
-
-     return getSeries(transport, { "condition.howMany": howMany }, "condition.latency")
-     .then(results => {
-     console.log(results);
-
-     return barChart({
-     name: `Traffic: ${transport}`,
-     fileName: `${resultDir}/ttfi_${transport.replace("/", "-")}_${howMany}.pdf`,
-     xField: "type",
-     xLabel: "Latency (ms)",
-     yLabel: "TTFI (ms)",
-     yField: "min",
-     categories: [20, 40, 80, 160, 320, 640]
-     }, results);
-     });
-     })
-     )
-     })
-     */
+    .then(() => {
+        console.log("done");
+        process.exit(0);
+    })
     .catch((err) => console.error(err.message, err.stack));
 

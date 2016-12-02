@@ -24,7 +24,7 @@ const conditions = {
     ]
 };
 
-const pollingIntervals = [1000, 5000, 10000, 30000];
+const pollingIntervals = [1000, 5000, 10000];
 const publishIntervals = [1000, 5000, 10000];
 addVariation(conditions, "pattern", ["polling"]);
 addVariation(conditions, "latency", [20, 640]);

@@ -2,7 +2,7 @@
 
 const { chart } = require("../../");
 
-module.exports = function (title, fileName, categories, series) {
+module.exports = function (title = false, fileName, categories, series) {
     return chart({
         chart: {
             type: "column",
@@ -14,6 +14,11 @@ module.exports = function (title, fileName, categories, series) {
         data: {
             //switchRowsAndColumns: true
         },
+        legend: {
+            itemStyle: {
+                fontSize: '20px'
+            }
+        },
         credits: {
             enabled: false
         },
@@ -23,12 +28,24 @@ module.exports = function (title, fileName, categories, series) {
         xAxis: {
             categories,
             title: {
-                text: "Latency (ms)"
+                text: "Latency (ms)",
+                style: {
+                    fontSize: "20px"
+                }
+            },
+            style: {
+                fontSize: "20px"
             }
         },
         yAxis: {
             title: {
-                text: "Load Time (ms)"
+                text: "Load Time (ms)",
+                style: {
+                    fontSize: "20px"
+                }
+            },
+            style: {
+                fontSize: "20px"
             }
         },
         plotOptions: {

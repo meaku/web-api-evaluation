@@ -3,11 +3,18 @@
 const { chart } = require("../../");
 
 /**
- * 
- * @param config
+ *
+ * @param title
+ * @param categories
+ * @param stacking
+ * @param series
+ * @param fileName
+ * @param yLabel
+ * @param xLabel
+ * @param xMax
+ * @param yMax
  */
-module.exports = function(config) {
-    const { title, categories, stacking, series, fileName, yLabel, xLabel, xMax, yMax } = config;
+module.exports = function({ title, categories, stacking, series, fileName, yLabel, xLabel, xMax, yMax }) {
 
     return chart({
         chart: {
@@ -20,22 +27,43 @@ module.exports = function(config) {
         credits: {
             enabled: false
         },
+        legend: {
+            itemStyle: {
+                fontSize: "20px"
+            }
+        },
         title: {
             text: title || false
         },
         xAxis: {
             title: {
-                text: xLabel
+                text: xLabel,
+                style: {
+                    fontSize: "20px"
+                }
             },
             categories,
-            max: xMax
+            max: xMax,
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
+            }
         },
         yAxis: {
             //allowDecimals: false,
             title: {
-                text: yLabel
+                text: yLabel,
+                style: {
+                    fontSize: "20px"
+                }
             },
-            max: yMax
+            max: yMax,
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
+            }
         },
         plotOptions: {
             series: {

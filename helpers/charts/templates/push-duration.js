@@ -2,7 +2,7 @@
 
 const { chart } = require("../../");
 
-module.exports = function(title, fileName, categories, series, stacking = false) {
+module.exports = function(title = false, fileName, categories, series, stacking = false) {
    
     return chart({
         chart: {
@@ -15,19 +15,40 @@ module.exports = function(title, fileName, categories, series, stacking = false)
         credits: {
             enabled: false
         },
+        legend: {
+            itemStyle: {
+                fontSize: '20px'
+            }
+        },
         title: {
             text: title
         },
         xAxis: {
             title: {
-                text: "Latency (ms)"
+                text: "Latency (ms)",
+                style: {
+                    fontSize: "20px"
+                }
             },
-            categories
+            categories,
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
+            }
         },
         yAxis: {
             //allowDecimals: false,
             title: {
-                text: "Load Time (ms)"
+                text: "Load Time (ms)",
+                style: {
+                    fontSize: '20px'
+                }
+            },
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
             }
         },
         plotOptions: {

@@ -114,7 +114,7 @@ function requestDistributionXTransport(config, results) {
 function pushDurationXLatency(config, results) {
     const { fileName, categories } = config;
     const series = toChartSeries(results, "transport", "avgDuration");
-    return pushDuration("Push Duration", fileName, categories, series);
+    return pushDuration(false, fileName, categories, series);
 }
 
 function uniqueItemsXLatency(config, results) {
