@@ -2,6 +2,7 @@
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
+const path = require("path");
 const fs = require("fs");
 const webdriver = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
@@ -37,9 +38,6 @@ const guard = require("when/guard");
 
 const { NetworkLimiter, TrafficSniffer, pcap, delay } = require("./helpers");
 
-//limiter is reused
-const limiter = new NetworkLimiter(`application@${simulationHost}:22222`);
-
 function getDriver(browser = "chrome") {
     //global settings
     const driver = new webdriver.Builder()
@@ -55,7 +53,6 @@ function getDriver(browser = "chrome") {
 
 let count = 0;
 
-
 /**
  * run a single simulation case
  *
@@ -66,6 +63,9 @@ let count = 0;
  * @returns {Promise}
  */
 function runSimulation(conditions, script, runner, resultDir) {
+    //limiter is reused
+    const limiter = new NetworkLimiter(`application@${simulationHost}:22222`);
+    
     const sets = conditions.map(condition => {
 
         return function run() {
@@ -91,9 +91,8 @@ function runSimulation(conditions, script, runner, resultDir) {
                         runner(driver, condition);
 
                         console.log(`GET https://${simulationServer}/start/${condition.realtimeInterval}`);
-                        const req = fetch(`https://${simulationServer}/start/${condition.realtimeInterval}`)
+                        return fetch(`https://${simulationServer}/start/${condition.realtimeInterval}`)
                             .then(res => res.json());
-                        return req;
                     }
 
                     console.log("execute script", condition);
@@ -106,8 +105,7 @@ function runSimulation(conditions, script, runner, resultDir) {
                         }
                         
                         return driver.executeScript(function() { return window.results; })
-                            .then((results) => {
-                                console.log(results.durations);
+                            .then(results => {
                                 console.log("before", results.durations.length);
                                 results.durations = results.durations.filter((d) => d.received <= result.end);
                                 console.log("after", results.durations.length);
@@ -116,7 +114,7 @@ function runSimulation(conditions, script, runner, resultDir) {
                     }
                     return result;
                 })
-                .then((result) => {
+                .then(result => {
                     console.log(result);
 
                     if(!result || result.error) {
@@ -136,7 +134,8 @@ function runSimulation(conditions, script, runner, resultDir) {
                             if (condition.sniffPort) {
                                 return sniffer.stop()
                                     //ensure pcap is written to disk
-                                    .then(() => delay(200))
+                                    .then(() => delay(1000))
+                                    .then(() => console.log("pcap!"))
                                     .then(() => pcap(trafficFile))
                                     .then(pcap => {
                                         return {
@@ -210,6 +209,6 @@ function runSimulationGroup(conditions, script, runner, resultDir) {
         });
 }
 
-process.on("unhandledRejection", (err) => console.error(err));
+process.on("unhandledRejection", console.error);
 
 module.exports = runSimulationGroup;

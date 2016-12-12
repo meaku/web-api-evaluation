@@ -111,7 +111,7 @@ class Analyzer {
             })
     }
 
-    plotDurationPerTransport() {
+    plotDurationPerTransport({ yMax }) {
         const self = this;
         const transports = ["HTTP/1.1", "HTTP/2", "WebSocket"];
         const categories = [20, 40, 60, 80, 100];
@@ -124,7 +124,8 @@ class Analyzer {
                             return transportDurationPerTransport({
                                 categories,
                                 transport,
-                                resultDir: self.resultDir
+                                resultDir: self.resultDir,
+                                yMax
                             }, results);
                         })
                 })
@@ -169,13 +170,14 @@ class Analyzer {
             });
     }
 
-    plotDistribution(howMany = 100, latency = 640) {
+    plotDistribution({ latency = 640, yMax }) {
         const self = this;
 
         function plot(howMany) {
             return self.query({ "condition.howMany": howMany, "condition.latency": latency }, { "condition.transport": 1 })
                 .then((results) => {
                     return requestDistributionXTransport({
+                        yMax,
                         fileName: `${self.resultDir}/distribution_${howMany}.pdf`
                     }, results);
                 });
@@ -187,7 +189,7 @@ class Analyzer {
         ])
     }
 
-    plotTTFI(howMany = 100) {
+    plotTTFI({ yMax }) {
         const self = this;
 
         function plot(howMany) {
@@ -218,8 +220,8 @@ class Analyzer {
                             duration: r.min
                         }
                     });
-
                     return transportDurationsXTransport({
+                        yMax,
                         config: {
                             fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
                             title: `Time to first item: ${howMany} Items`
@@ -235,7 +237,7 @@ class Analyzer {
         ])
     }
     
-    plotMeanPublishTime(realtimeInterval, condition = {}) {
+    plotMeanPublishTime(realtimeInterval, condition = {}, yMax) {
         const self = this;
         const conditions = { "condition.realtimeInterval": realtimeInterval };
         const pollInterval = condition["condition.pollingInterval"] || "";
@@ -263,7 +265,8 @@ class Analyzer {
 
                return pushDuration({
                    fileName: `${self.resultDir}/push-duration-${realtimeInterval}_${pollInterval}.pdf`,
-                   categories: [20, 640]
+                   categories: [20, 640],
+                   yMax
                }, results);
             });
     }
@@ -347,7 +350,7 @@ class Analyzer {
     }
     */
 
-    plotRTTraffic(pollingInterval) {
+    plotRTTraffic(pollingInterval, yMax) {
         const self = this;
         const condition = { "condition.latency": 20 };
 
@@ -358,7 +361,10 @@ class Analyzer {
         return this.query(condition, { "condition.realtimeInterval": 1, "condition.transport": 1 })
             .then(result => {
                 return trafficXPublishInterval(
-                    { fileName: `${self.resultDir}/traffic_${pollingInterval || ""}_dataSize.pdf` },
+                    {
+                        fileName: `${self.resultDir}/traffic_${pollingInterval || ""}_dataSize.pdf`,
+                        yMax
+                    },
                     result
                 )
             });

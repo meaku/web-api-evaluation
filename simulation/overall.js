@@ -53,7 +53,7 @@ function plotDurationsXType(transport, howMany, name, fileName) {
                     fileName,
                     stacked: false
                 },
-                yMax: howMany == 100 ? 12500 : 5000,
+                yMax: howMany == 100 ? 12500 : 4000,
                 series: series
             });
         });
@@ -91,7 +91,6 @@ analyzer.connect()
             ["HTTP/1.1", "HTTP/2", "WebSocket"].map(transport => {
                 return getSeries(transport, { "condition.latency": 80 }, "condition.howMany")
                     .then(results => {
-                        console.log(results);
                         
                         return barChart({
                             name: `Traffic: ${transport}`,

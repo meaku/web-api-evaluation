@@ -1,11 +1,14 @@
 "use strict";
 
+//highcharts-export-server -enableServer true
+
 const jsdom = require("jsdom");
 const fs = require("fs");
 const request = require("request");
 const highcharts = require("highcharts");
 
 function chart(chartConfig, filePath) {
+    
     return new Promise((resolve, reject) => {
         // Get the document and window
         const doc = jsdom.jsdom(`<!doctype html><html><body><div id="container"></div></body></html>`);
@@ -39,8 +42,10 @@ function chart(chartConfig, filePath) {
         //console.log(svg);
         console.log("Writing:" + filePath);
         //send the svg to the export service and save result as pdf
-        const piping = request.post({
-            url: "http://export.highcharts.com/",
+        const convertRequest = request.post({
+            //url: "http://export.highcharts.com/",
+            url: "http://localhost:7801",
+            //url: "http://localhost:3030",
             form: {
                 filename: "chart",
                 width: 0,
@@ -49,9 +54,9 @@ function chart(chartConfig, filePath) {
                 svg: svg
             }
         }).pipe(fs.createWriteStream(filePath));
-
-        piping.on("error", (err) => reject(err));
-        piping.on("finish", () => resolve());
+        
+        convertRequest.on("error", (err) => reject(err));
+        convertRequest.on("finish", () => resolve());
     });
 }
 

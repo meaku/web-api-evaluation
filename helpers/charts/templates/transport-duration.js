@@ -3,7 +3,6 @@
 const { chart } = require("../../");
 
 module.exports = function({ title = false, fileName, series, stacking = false, yMax}) {
-   
     return chart({
         chart: {
             type: "column",

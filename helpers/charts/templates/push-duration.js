@@ -2,7 +2,7 @@
 
 const { chart } = require("../../");
 
-module.exports = function(title = false, fileName, categories, series, stacking = false) {
+module.exports = function({ title = false, fileName, categories, series, stacking = false, xMax, yMax }) {
    
     return chart({
         chart: {
@@ -17,7 +17,7 @@ module.exports = function(title = false, fileName, categories, series, stacking 
         },
         legend: {
             itemStyle: {
-                fontSize: '20px'
+                fontSize: "20px"
             }
         },
         title: {
@@ -31,6 +31,7 @@ module.exports = function(title = false, fileName, categories, series, stacking 
                 }
             },
             categories,
+            max: xMax,
             labels: {
                 style: {
                     fontSize: "20px"
@@ -38,13 +39,14 @@ module.exports = function(title = false, fileName, categories, series, stacking 
             }
         },
         yAxis: {
-            //allowDecimals: false,
+            allowDecimals: false,
             title: {
                 text: "Load Time (ms)",
                 style: {
                     fontSize: '20px'
                 }
             },
+            max: yMax,
             labels: {
                 style: {
                     fontSize: "20px"

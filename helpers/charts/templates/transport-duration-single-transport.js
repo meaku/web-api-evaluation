@@ -2,7 +2,7 @@
 
 const { chart } = require("../../");
 
-module.exports = function (title = false, fileName, categories, series) {
+module.exports = function ({ title = false, fileName, categories, series, yMax }) {
     return chart({
         chart: {
             type: "column",
@@ -44,6 +44,7 @@ module.exports = function (title = false, fileName, categories, series) {
                     fontSize: "20px"
                 }
             },
+            max: yMax,
             style: {
                 fontSize: "20px"
             }

@@ -51,16 +51,17 @@ function runner(driver, config) {
 
 function analyze(results) {
     const analyzer = new Analyzer("results_batch", resultDir);
+    const yMax = 6000;
 
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
-        .then(() => analyzer.plotDistribution())
-        .then(() => analyzer.plotTTFI())
+        .then(() => analyzer.plotDistribution({ yMax }))
+        .then(() => analyzer.plotTTFI({ yMax }))
         .then(() => {
             return Promise.all([
-                analyzer.plotDurations({ yMax: 6000 }),
+                analyzer.plotDurations({ yMax }),
                 analyzer.plotTraffic(),
-                analyzer.plotDurationPerTransport()
+                analyzer.plotDurationPerTransport({ yMax })
             ]);
         })
         .then(() => {

@@ -47,21 +47,22 @@ function analyze(results) {
     const analyzer = new Analyzer("results_polling", resultDir);
 
     return analyzer.connect()
-        .then(() => analyzer.updateResults(resultDir + "/results.json"))
+        //.then(() => analyzer.updateResults(resultDir + "/_results.json"))
+        ///*
         .then(() => {
             const condition = { "condition.pollingInterval": 1000 };
             return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
         })
         .then(() => {
+            const condition = { "condition.pollingInterval": 5000 };
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
+        })
+        .then(() => {
             const condition = { "condition.pollingInterval": 10000 };
-            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
+            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition, 4000 )))
         })
         .then(() => {
-            const condition = { "condition.pollingInterval": 30000 };
-            return Promise.all(publishIntervals.map(interval => analyzer.plotMeanPublishTime(interval, condition)))
-        })
-        .then(() => {
-            const condition = { "condition.pollingInterval": 30000 };
+            const condition = { "condition.pollingInterval": 10000 };
             return Promise.all(publishIntervals.map(interval => analyzer.plotUniqueItems(interval, condition)))
         })
         .then(() => {
@@ -69,16 +70,15 @@ function analyze(results) {
             return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
         })
         .then(() => {
-            const condition = { "condition.pollingInterval": 10000 };
+            const condition = { "condition.pollingInterval": 5000 };
             return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
         })
         .then(() => {
-            const condition = { "condition.pollingInterval": 30000 };
+            const condition = { "condition.pollingInterval": 10000 };
             return Promise.all([analyzer.plotUniqueItemsXPublishInterval(20, condition), analyzer.plotUniqueItemsXPublishInterval(640, condition)])
         })
-        .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
         .then(() => Promise.all([analyzer.tablePollingDurations("HTTP/1.1"), analyzer.tablePollingDurations("HTTP/2")]))
-        .then(() => Promise.all(pollingIntervals.map(analyzer.plotRTTraffic.bind(analyzer))))
+        .then(() => Promise.all(pollingIntervals.map(pollingInterval => analyzer.plotRTTraffic(pollingInterval, 125))))
         .then(() => analyzer.query({ transport: "HTTP/1.1"}, { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}))
         .then(results => {
             results.forEach(result => {
@@ -91,6 +91,7 @@ function analyze(results) {
                 console.log(result.transport, result.latency, result.pollingInterval, result.realtimeInterval, "    ", result.durations.length, "    ", result.dataSize, "      ", result.durations.map(d => d.duration).join(";"));
             })
         })
+        //*/
         .catch((err) => console.error(err.message, err.stack));
 }
 

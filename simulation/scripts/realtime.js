@@ -177,10 +177,8 @@ function start(config) {
     }
 
     return patterns[pattern](config.baseUrl || window.location.host, onItem, config.pollingInterval)
-        .then(() => {
-            return { durations: performance.getEntriesByType("measure") }
-        })
-        .catch((err) => window.results.error = err);
+        .then(() => ({ durations: performance.getEntriesByType("measure") }))
+        .catch(err => { window.results.error = err });
 }
 
 window.start = start;

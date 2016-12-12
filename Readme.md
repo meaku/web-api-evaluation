@@ -107,6 +107,10 @@ ws {
   min: 0,
   max: 2389 }
 
+  ## Highcharts render server
+
+  - `highcharts-export-server -enableServer true`
+
 
 
 ## [Capinfos](https://www.wireshark.org/docs/man-pages/capinfos.html)

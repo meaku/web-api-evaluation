@@ -12,6 +12,7 @@ const stream = require("stream");
  */
 function waitForData() {
     function finito() {
+        console.log("finito");
         writable.emit("writeFinished");
     }
 
@@ -48,7 +49,10 @@ class TrafficSniffer {
             const dataWritten = waitForData();
             self.seq.pipe(dataWritten);
 
-            dataWritten.on("writeFinished", () =>  resolve());
+            dataWritten.on("writeFinished", () =>  {
+                self.seq.unpipe(dataWritten);
+                resolve();
+            });
         });
 
         this.seq.pipe(createWriteStream(filePath));

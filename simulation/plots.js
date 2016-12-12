@@ -25,13 +25,11 @@ const {
 } = require("../helpers").chartTemplates;
 
 function trafficXHowMany(config, results) {
-    const { xField, yField, categories, fileName, yLabel, xLabel, title } = config;
+    const { xField, yField, categories, fileName, yLabel, xLabel, title, yMax, xMax } = config;
 
     const series = toChartSeries(results, xField, yField);
-
-    console.log(series);
-
-    return trafficSize(title, fileName, categories, series, xLabel, yLabel)
+    console.log(xField, yField, series);
+    return trafficSize({ title, fileName, categories, series, xLabel, yLabel, yMax, xMax })
 }
 
 exports.trafficXDataSize = function (config, results) {
@@ -48,6 +46,7 @@ exports.trafficXDataSize = function (config, results) {
 
 exports.trafficXPublishInterval = function (config, results) {
     return trafficXHowMany({
+        yMax: config.yMax,
         categories: [1, 5, 10, 30],
         yField: "dataSize",
         xField: "transport",
@@ -59,8 +58,11 @@ exports.trafficXPublishInterval = function (config, results) {
 };
 
 exports.trafficXNumberOfPackets = function (config, results) {
+    
     return trafficXHowMany({
         yField: "numberOfPackets",
+        xField: "transport",
+        categories: [1, 5, 10, 30],
         yLabel: "# TCP Packets",
         xLabel: "# Items",
         title: "Number of TCP packets",
@@ -69,14 +71,13 @@ exports.trafficXNumberOfPackets = function (config, results) {
 };
 
 exports.transportDurationsXTransport = function ({ config, results, series, yMax }) {
-    const { fileName, title } = config;
+    const { fileName, stacked, title } = config;
     series = series || toChartSeries(
         results,
         "transport",
         "duration"
     );
-
-    return transportDuration({ title, fileName, series, stacked: config.stacked, yMax });
+    return transportDuration({ title, fileName, series, stacked, yMax });
 };
 
 exports.barChart = function(config, results, series) {
@@ -90,18 +91,18 @@ exports.barChart = function(config, results, series) {
 };
 
 function durationXLatency(config, results) {
-    let { categories, filePath, transport} = config;
+    let { categories, filePath, transport, yMax} = config;
     let series = toChartSeries(results, "latency", "duration");
     
-    return transportDurationSingleTransport("Load Time subject to Latency: " + transport, filePath, categories, series);
+    return transportDurationSingleTransport({ title: "Load Time subject to Latency: " + transport, fileName: filePath, categories, series, yMax });
 }
 
 function durationXHowMany(config, results) {
-    let { categories, filePath, transport} = config;
+    let { categories, filePath, transport, yMax} = config;
     let series = toChartSeries(results, "latency", "duration");
     let { categories: sCategories, series: sSeries } = swapSeries(series, categories);
 
-    return transportDurationSingleTransport("Load Time subject to # of Requests: " + transport, filePath, sCategories, sSeries);
+    return transportDurationSingleTransport({ title: "Load Time subject to # of Requests: " + transport, fileName: filePath, categories: sCategories, series: sSeries, yMax });
 }
 
 function requestDistributionXTransport(config, results) {
@@ -112,17 +113,16 @@ function requestDistributionXTransport(config, results) {
 }
 
 function pushDurationXLatency(config, results) {
-    const { fileName, categories } = config;
+    const { fileName, categories, yMax } = config;
     const series = toChartSeries(results, "transport", "avgDuration");
-    return pushDuration(false, fileName, categories, series);
+    return pushDuration({ fileName, categories, yMax, series });
 }
 
 function uniqueItemsXLatency(config, results) {
     const { fileName, categories } = config;
     const series = toChartSeries(results, "transport", "uniqueCount");
-    console.log(series);
 
-    return pushDuration("Unique Items", fileName, categories, series);
+    return pushDuration({ title: "Unique Items", fileName, categories, series });
 }
 
 function uniqueItemsXPublishInterval(config, results) {
@@ -149,17 +149,19 @@ function uniqueItemsXPublishInterval(config, results) {
  * @returns {Promise}
  */
 function transportDurationPerTransport(config, results) {
-    let { categories, transport, resultDir } = config;
+    let { categories, transport, resultDir, yMax } = config;
     
     return Promise.all([
         durationXLatency({
             categories,
             transport,
+            yMax,
             filePath: resultDir + "/distribution_latency_" + transport.replace("/", "-") + ".pdf"
         }, results),
         durationXHowMany({
             categories,
             transport,
+            yMax,
             filePath: resultDir + "/distribution_howMany_" + transport.replace("/", "-") + ".pdf"
         }, results)
     ]);

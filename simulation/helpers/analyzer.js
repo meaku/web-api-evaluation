@@ -31,7 +31,7 @@ exports.duration = function (results, outputPath, tableCaption, tableLabel, char
  * @param resultDir
  * @param chartTitle
  */
-exports.trafficSize = function(results, resultDir, chartTitle) {
+exports.trafficSize = function({ results, resultDir, chartTitle, yMax, xMax }) {
     //TODO should be part of simulation logic
     function parseTraffic(r) {
         const [size] = r.dataSize.split(" ");
@@ -83,7 +83,7 @@ exports.trafficSize = function(results, resultDir, chartTitle) {
             }
         });
 
-    chartTemplates.trafficSize(chartTitle, resultDir, ["Uncompressed"], series);
+    chartTemplates.trafficSize({ title: chartTitle, fileName: resultDir, categories: ["Uncompressed"], series, yMax, xMax });
 };
 
 exports.requestDistribution = function (results, resultDir) {

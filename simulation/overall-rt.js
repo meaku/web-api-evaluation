@@ -6,7 +6,7 @@ const _ = require("lodash");
 const resultDir = path.resolve(__dirname, "../results/simulation/overall-rt/");
 const stats = require("simple-statistics");
 
-const analyzer = new Analyzer("results_batch", __dirname);
+const analyzer = new Analyzer("", __dirname);
 
 function fetchDataForType(type, collection, transport, conditions = {}, xValue) {
     const sort = {};
@@ -17,7 +17,6 @@ function fetchDataForType(type, collection, transport, conditions = {}, xValue) 
     }
 
     sort[xValue] = 1;
-
     return analyzer.query(conditions, sort, collection)
         .then(res => {
             return res.map(result => {
@@ -85,7 +84,7 @@ analyzer.connect()
                             xLabel: "Publish Interval (s)",
                             yLabel: "Mean Publish Time (ms)",
                             yField: "avgDuration",
-                            categories: [1, 5, 10, 30]
+                            categories: [1, 5, 10]
                         }, results);
                     });
             })
@@ -104,10 +103,11 @@ analyzer.connect()
                             name,
                             fileName,
                             xField: "type",
+                            yMax: 10,
                             xLabel: "Publish Interval (s)",
                             yLabel: "# Unique Items",
                             yField: "uniqueCount",
-                            categories: [1, 5, 10, 30]
+                            categories: [1, 5, 10]
                         }, results);
                     });
             })
@@ -117,6 +117,7 @@ analyzer.connect()
         return Promise.all(
             variations.map(config => {
                 const { transport, latency } = config;
+                const yMax = latency === 20 ? 50 : 800;
                 const name = `Mean Publish Time: ${transport}, ${latency}`;
                 const fileName = `${resultDir}/mpt_${transport.replace("/", "-")}_${latency}.pdf`;
 
@@ -129,7 +130,8 @@ analyzer.connect()
                             xLabel: "Publish Interval (s)",
                             yLabel: "Mean Publish Time (ms)",
                             yField: "avgDuration",
-                            categories: [1, 5, 10, 30]
+                            yMax,
+                            categories: [1, 5, 10]
                         }, results);
                     });
             })
@@ -150,8 +152,9 @@ analyzer.connect()
                             xField: "type",
                             xLabel: "Publish Interval (s)",
                             yLabel: "# Unique Items",
+                            yMax: 10,
                             yField: "uniqueCount",
-                            categories: [1, 5, 10, 30]
+                            categories: [1, 5, 10]
                         }, results);
                     });
             })
@@ -168,8 +171,9 @@ analyzer.connect()
                             xField: "type",
                             xLabel: "Publish Interval (s)",
                             yLabel: "Data Size (kB)",
+                            yMax: 125,
                             yField: "dataSize",
-                            categories: [1, 5, 10, 30]
+                            categories: [1, 5, 10]
                         }, results);
                     });
             })

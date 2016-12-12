@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/meaku/web-api-evaluation#readme",
   "dependencies": {
+    "JSONStream": "^1.2.1",
     "cli-table": "^0.3.1",
     "express": "^4.13.4",
     "glob-promise": "^1.0.6",
