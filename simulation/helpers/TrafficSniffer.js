@@ -12,6 +12,7 @@ const stream = require("stream");
  */
 function waitForData() {
     function finito() {
+        console.log("finito");
         writable.emit("writeFinished");
     }
 
@@ -48,11 +49,14 @@ class TrafficSniffer {
             const dataWritten = waitForData();
             self.seq.pipe(dataWritten);
 
-            dataWritten.on("writeFinished", () =>  resolve());
+            dataWritten.on("writeFinished", () =>  {
+                self.seq.unpipe(dataWritten);
+                resolve();
+            });
         });
 
         this.seq.pipe(createWriteStream(filePath));
-        this.seq.write(`tshark -i eth0 -f "tcp port ${port}" -F pcap -w -`);
+        this.seq.write(`tshark -i eth1 -f "tcp port ${port}" -F pcap -w -`);
         //this.seq.write(`tshark -i eth0 -o "ssl.keys_list: any,${port},http,/home/application/localhost.key" -f "tcp port ${port}" -F pcap -w -`);
         return this.isReady;
     }

@@ -22,13 +22,16 @@
   "homepage": "https://github.com/meaku/web-api-evaluation#readme",
   "dependencies": {
     "compression": "^1.6.2",
-    "express": "^4.13.4",
+    "express": "^4.14.0",
+    "express-sse": "^0.4.1",
     "glob-promise": "^1.0.6",
     "npm-run-all": "^2.1.1",
+    "present": "^1.0.0",
     "spdy": "^3.3.2",
     "sse": "0.0.6",
+    "web-push": "^3.1.0",
     "when": "^3.7.7",
-    "ws": "^1.1.0",
+    "ws": "^1.1.1",
     "yargs": "^4.6.0"
   }
 }

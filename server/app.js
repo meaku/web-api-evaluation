@@ -3,31 +3,17 @@
 const fs = require("fs");
 const path = require("path");
 const resources = require("./lib/resources");
-const EventStream = require("./lib/EventStream");
-const compression = require("compression");
+const push = require("./push");
 
+const SSE = require("express-sse");
 const express = require("express");
-var app = express();
+const app = express();
+const sse = new SSE();
 
-function shouldCompress(req, res) {
-    if (process.env.compression) {
-        // fallback to standard filter function
-        return compression.filter(req, res)
-    }
-    
-    return false;
-}
-
-app.use(compression({ filter: shouldCompress }));
-
-//app.use(compression());
-
-app.use("/configure", (req, res, next) => {
-    process.env.compression = Boolean(req.query.compression || false) || false;
-    console.log(process.env.compression);
-});
+let lastEvent = null;
 
 app.use((req, res, next) => {
+    res.header("Cache-Control", "no-cache");
     res.header("access-control-allow-origin", "*");
     next();
 });
@@ -37,50 +23,45 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get("/sse", sse.init);
+
 app.use(express.static(__dirname + "/public"));
 
-/*
- app.get("/polling", (req, res, next) => {
- const eventStream = new EventStream();
+app.use("/start/:interval?", (req, res) => {
+    const query = req.query;
+    const start = Date.now();
 
- const timeout =  setTimeout(() => {
- res.json({});
- }, 10000);
+    function onData(d) {
+        sse.send(d);
+        lastEvent = d;
 
- eventStream.once("data", (data) => {
- res.json(data);
- clearTimeout(timeout);
- });
- });
- */
-
-app.get("/file/:name", function (req, res, next) {
-    var options = {
-        root: path.join(__dirname, "/data/files/"),
-        dotfiles: "deny"
-    };
-
-    res.sendFile(req.params.name, options, (err) => {
-        if (err) {
-            console.log(err);
-            res.status(err.status).end();
+        if (query.endpoint) {
+            console.log("-> " + query.endpoint);
+            push(query, d).catch((err) => console.error("Could not send push message", err));
         }
+    }
+
+    app.es.start(req.params.interval);
+    app.es.on("data", onData);
+    app.es.once("end", () => {
+        app.es.removeListener("data", onData);
+        lastEvent = null;
+        res.json({
+            status: "success",
+            start,
+            end: Date.now()
+        });
     });
 });
 
-app.get("/delay/:delay", (req, res) => {
-    setTimeout(() => res.json({}), req.params.delay);
+app.get("/polling", (req, res, next) => {
+    res.json(lastEvent || {});
+    lastEvent = null;
 });
 
 app.get("/long-polling", (req, res) => {
-    const eventStream = new EventStream();
-    const timeout = setTimeout(() => {
-        res.json({});
-    }, 10000);
-
-    eventStream.once("data", (data) => {
+    app.es.once("data", (data) => {
         res.json(data);
-        clearTimeout(timeout);
     });
 });
 
@@ -89,24 +70,26 @@ app.get("/streamed-polling", (req, res) => {
         res.set("Transfer-encoding", "chunked");
     }
 
-    res.write("{ ok: true }");
+    function onData(data) {
+        res.write(JSON.stringify(data) + "\n");
+    }
 
-    const eventStream = new EventStream(1000);
-
-    setTimeout(() => {
-        eventStream.removeAllListeners();
+    app.es.once("end", () => {
+        app.es.removeListener("data", onData);
         res.end();
-    }, 30000);
-
-    eventStream.on("data", (data) => {
-        res.write(JSON.stringify(data));
     });
+
+    app.es.on("data", onData);
+});
+
+app.get("/delay/:delay", (req, res) => {
+    setTimeout(() => res.json({}), req.params.delay);
 });
 
 app.get("/:resourceType/:range", (req, res, next) => {
     const { resourceType, range } = req.params;
 
-    if(!range || range.indexOf("-") === -1) {
+    if (!range || range.indexOf("-") === -1) {
         next();
         return;
     }
@@ -126,7 +109,7 @@ app.get("/:resourceType/:range", (req, res, next) => {
         .then(items => {
 
             //stream mode
-            if(req.query.stream) {
+            if (req.query.stream) {
                 return res.send(items.map(d => JSON.stringify(d)).join("\n"));
             }
 
@@ -138,7 +121,7 @@ app.get("/:resourceType/:range", (req, res, next) => {
 app.get("/:resourceType/:id?", (req, res, next) => {
     const { id, resourceType } = req.params;
     const resource = resources[resourceType];
-    
+
     if (!resource) {
         res.json({
             error: "invalid-resource"
@@ -146,7 +129,7 @@ app.get("/:resourceType/:id?", (req, res, next) => {
 
         return;
     }
-    
+
     if (!id) {
         return resource.readCollection()
             .then((data) => res.json(data))

@@ -20,13 +20,26 @@ function read(resource, id, send) {
         .catch((err) => send(err));
 }
 
-module.exports = function init(server, resources) {
+module.exports = function init(server, resources, es) {
     const wss = new WebSocketServer({
         server: server,
         perMessageDeflate: false
     });
 
     wss.on("connection", function connection(ws) {
+
+        function pushData(data){
+            ws.send(JSON.stringify(data));
+        }
+
+        ws.on("close", () => {
+            console.log("connection closed");
+            es.removeListener("data", pushData);
+        });
+
+        //push!
+        es.on("data", pushData);
+
         ws.on("message", function incoming(message) {
             message = JSON.parse(message);
 
@@ -71,8 +84,6 @@ module.exports = function init(server, resources) {
                 for (startId; startId <= endId; startId++) {
                     ids.push(startId);
                 }
-
-                console.log("ids", ids);
 
                 return readCollectionBatch(resource, ids, send);
             }

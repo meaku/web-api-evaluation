@@ -63,8 +63,7 @@ exports.toChartSeries = function (results, name, data = "duration", names) {
 
         const entries = results
             .filter(result => result[name] === n)
-            //.sort(sortByOrder(sortEntries))
-            .map(entry => entry[data]);
+            .map(entry => parseInt(entry[data]));
 
         return {
             name: names[n],

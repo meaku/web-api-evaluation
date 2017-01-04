@@ -3,7 +3,7 @@
 const { networks, toChartSeries, chart } = require("../../");
 const { inspect } = require("util");
 
-module.exports = function(title, fileName, categories, series, categoryTitle = "# Requests", yTitle = "Data Size (kB)") {
+module.exports = function({ title = false, fileName, categories, series, xLabel = "# Requests", yLabel = "Data Size (kB)", xMax, yMax}) {
     return chart({
         chart: {
             type: "column",
@@ -13,21 +13,39 @@ module.exports = function(title, fileName, categories, series, categoryTitle = "
             height: 400
         },
         title: {
-            text: title
+            text: false
         },
         credits: {
             enabled: false
         },
         xAxis: {
             categories,
+            max: xMax,
             title: {
-                text: categoryTitle
+                text: xLabel,
+                style: {
+                    fontSize: "20px"
+                }
+            },
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
             }
         },
         yAxis: {
             //allowDecimals: false,
             title: {
-                text: yTitle
+                text: yLabel,
+                style: {
+                    fontSize: "20px"
+                }
+            },
+            max: yMax,
+            labels: {
+                style: {
+                    fontSize: "20px"
+                }
             }
         },
         plotOptions: {

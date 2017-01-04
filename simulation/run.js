@@ -24,14 +24,13 @@ const simulation = saveRequire(`${__dirname}/simulations/${name}`, "Could not fi
 if (task === "run") {
 
     if (simulation.run) {
-        simulation.run().then(() => process.exit(0));
+        simulation.run()
+            .then(() => process.exit(0));
         return;
     }
 
     runSimulation(simulation.conditions, simulation.script, simulation.runner, simulation.resultDir)
-        .then((res) => {
-            return simulation.analyze(res);
-        })
+        .then(res => simulation.analyze(res))
         .then(() => process.exit(0))
         .catch(err => console.error(err.message, err.stack));
 

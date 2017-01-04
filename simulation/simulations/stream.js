@@ -48,13 +48,13 @@ function analyze(results) {
 
     return analyzer.connect()
         .then(() => analyzer.updateResults(resultDir + "/results.json"))
-        .then(() => analyzer.plotDistribution())
-        .then(() => analyzer.plotTTFI())
+        .then(() => analyzer.plotDistribution({}))
+        .then(() => analyzer.plotTTFI({ yMax: 3000 }))
         .then(() => {
             return Promise.all([
-                analyzer.plotDurations(),
+                analyzer.plotDurations({ yMax: 4000 }),
                 analyzer.plotTraffic(),
-                analyzer.plotDurationPerTransport()
+                analyzer.plotDurationPerTransport({})
             ]);
         })
         .then(() => {

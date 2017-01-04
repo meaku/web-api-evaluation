@@ -6,14 +6,19 @@ const {
     transportDurationPerTransport,
     requestDistributionXTransport,
     trafficXDataSize,
-    trafficXNumberOfPackets
+    trafficXPublishInterval,
+    trafficXNumberOfPackets,
+    pushDuration,
+    uniqueItemsXLatency,
+    uniqueItemsXPublishInterval
 } = require("./plots");
 
 const stats = require("simple-statistics");
 
 const {
     traffic,
-    duration
+    duration,
+    realtimeItemCount
 } = require("./tables");
 
 const _ = require("lodash");
@@ -68,16 +73,20 @@ class Analyzer {
      *
      * @returns {*|Promise}
      */
-    plotDurations() {
+    plotDurations({ yMax }) {
         const self = this;
 
         function plot(howMany) {
             return self.query({ "condition.howMany": howMany }, { "transport": 1, "condition.latency": 1 })
-                .then((result) => {
+                .then((results) => {
                     return transportDurationsXTransport({
-                        fileName: `${self.resultDir}/durations_${howMany}.pdf`,
-                        title: `Load Time: ${howMany} Items`
-                    }, result)
+                        config: {
+                            fileName: `${self.resultDir}/durations_${howMany}.pdf`,
+                            title: `Load Time: ${howMany} Items`,
+                        },
+                        yMax,
+                        results
+                    })
                 });
         }
 
@@ -102,7 +111,7 @@ class Analyzer {
             })
     }
 
-    plotDurationPerTransport() {
+    plotDurationPerTransport({ yMax }) {
         const self = this;
         const transports = ["HTTP/1.1", "HTTP/2", "WebSocket"];
         const categories = [20, 40, 60, 80, 100];
@@ -115,7 +124,8 @@ class Analyzer {
                             return transportDurationPerTransport({
                                 categories,
                                 transport,
-                                resultDir: self.resultDir
+                                resultDir: self.resultDir,
+                                yMax
                             }, results);
                         })
                 })
@@ -160,13 +170,14 @@ class Analyzer {
             });
     }
 
-    plotDistribution(howMany = 100, latency = 640) {
+    plotDistribution({ latency = 640, yMax }) {
         const self = this;
 
         function plot(howMany) {
             return self.query({ "condition.howMany": howMany, "condition.latency": latency }, { "condition.transport": 1 })
                 .then((results) => {
                     return requestDistributionXTransport({
+                        yMax,
                         fileName: `${self.resultDir}/distribution_${howMany}.pdf`
                     }, results);
                 });
@@ -178,7 +189,7 @@ class Analyzer {
         ])
     }
 
-    plotTTFI(howMany = 100) {
+    plotTTFI({ yMax }) {
         const self = this;
 
         function plot(howMany) {
@@ -209,11 +220,14 @@ class Analyzer {
                             duration: r.min
                         }
                     });
-
                     return transportDurationsXTransport({
-                        fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
-                        title: `Time to first item: ${howMany} Items`
-                    }, result)
+                        yMax,
+                        config: {
+                            fileName: `${self.resultDir}/ttfi_${howMany}.pdf`,
+                            title: `Time to first item: ${howMany} Items`
+                        },
+                        results: result
+                    })
                 });
         }
 
@@ -221,6 +235,164 @@ class Analyzer {
             plot(20),
             plot(100)
         ])
+    }
+    
+    plotMeanPublishTime(realtimeInterval, condition = {}, yMax) {
+        const self = this;
+        const conditions = { "condition.realtimeInterval": realtimeInterval };
+        const pollInterval = condition["condition.pollingInterval"] || "";
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.transport": 1, "condition.latency": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    result.pollingInterval = result.pollingInterval / 1000;
+                    result.realtimeInterval = result.realtimeInterval / 1000;
+
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    result.avgDuration = stats.mean(durations);
+
+                    return result;
+                });
+            })
+            .then(results => {
+                results.forEach(result => {
+                    console.log(result.transport, result.latency, result.realtimeInterval, ":", result.uniqueCount, result.avgDuration, result.dataSize)
+                });
+
+               return pushDuration({
+                   fileName: `${self.resultDir}/push-duration-${realtimeInterval}_${pollInterval}.pdf`,
+                   categories: [20, 640],
+                   yMax
+               }, results);
+            });
+    }
+
+    plotUniqueItems(realtimeInterval, condition = {}) {
+        const self = this;
+        const conditions = { "condition.realtimeInterval": realtimeInterval };
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.transport": 1, "condition.latency": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    result.avgDuration = stats.mean(durations);
+                    return result;
+                });
+            })
+            .then(results => {
+                results.forEach(result => {
+                    console.log(result.transport, result.latency, result.realtimeInterval, ":", result.uniqueCount, result.avgDuration, result.dataSize)
+                });
+
+                return uniqueItemsXLatency({
+                    fileName: `${self.resultDir}/uniqueItems-${realtimeInterval}_${condition["condition.pollingInterval"] || ""}.pdf`,
+                    categories: [20, 640]
+                }, results);
+            });
+    }
+
+    plotUniqueItemsXPublishInterval(latency, condition = {}) {
+        const self = this;
+        const conditions = { "condition.latency": latency };
+        let pollInterval = condition["condition.pollingInterval"] || false;
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.realtimeInterval": 1, "condition.transport": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    return result;
+                });
+            })
+            .then(results => {
+                return uniqueItemsXPublishInterval({
+                    fileName: `${self.resultDir}/uniqueItems-interval_${latency}_${pollInterval || ""}.pdf`,
+                    categories: [1, 5, 10]
+                }, results);
+                
+            });
+    }
+
+    /*
+    plotTrafficXPublishInterval(latency, condition = {}) {
+        const self = this;
+        const conditions = { "condition.latency": latency };
+        let pollInterval = condition["condition.pollingInterval"] || false;
+
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.realtimeInterval": 1, "condition.transport": 1 }
+        )
+            .then(results => {
+                return results.map(result => {
+                    let durations = result.durations.map(r => r.duration);
+                    result.uniqueCount = durations.length;
+                    return result;
+                });
+            })
+            .then(results => {
+                return trafficXPublishInterval({
+                    fileName: `${self.resultDir}/traffic-interval_${latency}_${pollInterval || ""}.pdf`,
+                    categories: [1, 5, 10, 30]
+                }, results);
+            });
+    }
+    */
+
+    plotRTTraffic(pollingInterval, yMax) {
+        const self = this;
+        const condition = { "condition.latency": 20 };
+
+        if(pollingInterval) {
+            condition["condition.pollingInterval"] = pollingInterval;
+        }
+
+        return this.query(condition, { "condition.realtimeInterval": 1, "condition.transport": 1 })
+            .then(result => {
+                return trafficXPublishInterval(
+                    {
+                        fileName: `${self.resultDir}/traffic_${pollingInterval || ""}_dataSize.pdf`,
+                        yMax
+                    },
+                    result
+                )
+            });
+    }
+    
+    tablePollingDurations(transport, condition = {}) {
+        const self = this;
+
+        let conditions = { transport, "condition.realtimeInterval": 10000 };
+        
+        return this.query(
+            Object.assign(conditions, condition),
+            { "condition.latency": 1, "condition.realtimeInterval": 1, "condition.pollingInterval": 1}
+        )
+            .then(results => {
+                return results.map(result => {
+                    result.pollingInterval = result.pollingInterval / 1000;
+                    result.realtimeInterval = result.realtimeInterval / 1000;
+
+                    return result;
+                });
+            })
+            .then(results => {
+                realtimeItemCount({
+                    fileName: `${self.resultDir}/polling_durations_${transport.replace("/", "-")}.tex`,
+                    caption: `Polling Durations: ${transport}`
+                }, results);
+            });
     }
 }
 
